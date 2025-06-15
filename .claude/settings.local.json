@@ -10,7 +10,9 @@
       "Bash(npm uninstall:*)",
       "Bash(npm install:*)",
       "Bash(npm run test:install:*)",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "Bash(npx playwright:*)",
+      "Bash(timeout 30 npx playwright test --grep \"should load game with hex grid\")"
     ],
     "deny": []
   }

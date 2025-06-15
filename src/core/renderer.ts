@@ -1,12 +1,14 @@
 import * as PIXI from 'pixi.js';
 import { HexCoordinate, HexUtils } from './hex';
 import { VisibilitySystem } from '../systems/visibility';
+import { Settler } from '../entities/settler';
 
 export class HexRenderer {
   private app: PIXI.Application;
   private hexContainer: PIXI.Container;
   private hexGraphics: Map<string, PIXI.Graphics> = new Map();
   private visibilitySystem: VisibilitySystem;
+  private settlerGraphics?: PIXI.Graphics;
 
   constructor(container: HTMLElement) {
     console.log('Container dimensions:', container.clientWidth, container.clientHeight);
@@ -149,6 +151,30 @@ export class HexRenderer {
     } else {
       this.renderHex(hex, color);
     }
+  }
+
+  renderSettler(settler: Settler) {
+    if (this.settlerGraphics) {
+      this.hexContainer.removeChild(this.settlerGraphics);
+    }
+
+    this.settlerGraphics = new PIXI.Graphics();
+    const { x, y } = HexUtils.hexToPixel(settler.position);
+    
+    // Draw settler as a blue circle
+    this.settlerGraphics.beginFill(0x4444ff);
+    this.settlerGraphics.drawCircle(x, y, HexUtils.HEX_SIZE * 0.4);
+    this.settlerGraphics.endFill();
+    
+    // Add white border
+    this.settlerGraphics.lineStyle(2, 0xffffff);
+    this.settlerGraphics.drawCircle(x, y, HexUtils.HEX_SIZE * 0.4);
+
+    this.hexContainer.addChild(this.settlerGraphics);
+  }
+
+  getCanvas(): HTMLCanvasElement {
+    return this.app.view as HTMLCanvasElement;
   }
 
   destroy() {

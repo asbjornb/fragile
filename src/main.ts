@@ -1,19 +1,19 @@
 import './style.css'
-import { HexRenderer } from './core/renderer'
+import { Game } from './core/game'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 app.innerHTML = `
   <div>
     <h1>Fragile</h1>
-    <p>An incremental rogue-civilization game</p>
+    <p>Click adjacent hexes to move your settler</p>
     <div id="game-container"></div>
   </div>
 `
 
 const gameContainer = document.querySelector<HTMLDivElement>('#game-container')!
-const renderer = new HexRenderer(gameContainer)
+const game = new Game(gameContainer)
 
 window.addEventListener('beforeunload', () => {
-  renderer.destroy()
+  game.destroy()
 })
