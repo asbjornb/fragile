@@ -11,6 +11,7 @@ export class HexRenderer {
   private settlerGraphics?: PIXI.Graphics;
   private uiContainer: PIXI.Container;
   private foodText?: PIXI.Text;
+  private isAnimating: boolean = false;
 
   constructor(container: HTMLElement) {
     console.log('Container dimensions:', container.clientWidth, container.clientHeight);
@@ -193,7 +194,66 @@ export class HexRenderer {
     }
   }
 
+  animateSettlerMovement(fromHex: HexCoordinate, toHex: HexCoordinate, settler: Settler, onComplete: () => void) {
+    if (this.isAnimating) return;
+    
+    this.isAnimating = true;
+    const duration = 300; // ms
+    const startTime = Date.now();
+    
+    const fromPixel = HexUtils.hexToPixel(fromHex);
+    const toPixel = HexUtils.hexToPixel(toHex);
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Smooth easing
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      
+      // Interpolate settler position
+      const currentX = fromPixel.x + (toPixel.x - fromPixel.x) * easeProgress;
+      const currentY = fromPixel.y + (toPixel.y - fromPixel.y) * easeProgress;
+      
+      // Update settler graphics
+      if (this.settlerGraphics) {
+        this.hexContainer.removeChild(this.settlerGraphics);
+      }
+      
+      this.settlerGraphics = new PIXI.Graphics();
+      this.settlerGraphics.beginFill(0x4444ff);
+      this.settlerGraphics.drawCircle(currentX, currentY, HexUtils.HEX_SIZE * 0.4);
+      this.settlerGraphics.endFill();
+      this.settlerGraphics.lineStyle(2, 0xffffff);
+      this.settlerGraphics.drawCircle(currentX, currentY, HexUtils.HEX_SIZE * 0.4);
+      this.hexContainer.addChild(this.settlerGraphics);
+      
+      // Interpolate camera position
+      const targetCameraX = this.app.screen.width / 2 - (fromPixel.x + (toPixel.x - fromPixel.x) * easeProgress);
+      const targetCameraY = this.app.screen.height / 2 - (fromPixel.y + (toPixel.y - fromPixel.y) * easeProgress);
+      
+      this.hexContainer.x = targetCameraX;
+      this.hexContainer.y = targetCameraY;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Animation complete
+        this.isAnimating = false;
+        this.centerCameraOnHex(toHex);
+        this.renderVisibleArea(toHex);
+        this.renderSettler(settler);
+        onComplete();
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }
+
   renderSettler(settler: Settler) {
+    // Don't update if we're animating
+    if (this.isAnimating) return;
+    
     // Center camera on settler
     this.centerCameraOnHex(settler.position);
     

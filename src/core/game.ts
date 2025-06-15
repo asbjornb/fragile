@@ -27,11 +27,15 @@ export class Game {
       
       // Only allow movement to adjacent hexes
       if (distance === 1 && this.settlerSystem.canMove()) {
+        const fromHex = settler.position;
         const success = this.settlerSystem.moveSettler(hex);
         if (success) {
           console.log(`Settler moved to ${hex.q}, ${hex.r}`);
-          this.updateVisibility();
-          this.render();
+          
+          // Animate the movement
+          this.renderer.animateSettlerMovement(fromHex, hex, this.settlerSystem.getSettler(), () => {
+            this.updateVisibility();
+          });
         }
       } else if (distance > 1) {
         console.log('Can only move to adjacent hexes');
