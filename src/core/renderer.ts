@@ -41,8 +41,13 @@ export class HexRenderer {
   }
 
   private setupCamera() {
-    this.hexContainer.x = this.app.screen.width / 2;
-    this.hexContainer.y = this.app.screen.height / 2;
+    this.centerCameraOnHex({ q: 0, r: 0 });
+  }
+
+  private centerCameraOnHex(hex: HexCoordinate) {
+    const { x, y } = HexUtils.hexToPixel(hex);
+    this.hexContainer.x = this.app.screen.width / 2 - x;
+    this.hexContainer.y = this.app.screen.height / 2 - y;
   }
 
   private setupUI() {
@@ -61,22 +66,36 @@ export class HexRenderer {
   }
 
   private renderInitialGrid() {
-    const gridRadius = 6;
-    console.log('Rendering grid with radius:', gridRadius);
+    this.renderVisibleArea({ q: 0, r: 0 });
+  }
+
+  private renderVisibleArea(centerHex: HexCoordinate) {
+    const viewRadius = 6;
+    const renderedHexes = new Set<string>();
     
-    let hexCount = 0;
-    for (let q = -gridRadius; q <= gridRadius; q++) {
-      const r1 = Math.max(-gridRadius, -q - gridRadius);
-      const r2 = Math.min(gridRadius, -q + gridRadius);
-      
-      for (let r = r1; r <= r2; r++) {
+    for (let q = centerHex.q - viewRadius; q <= centerHex.q + viewRadius; q++) {
+      for (let r = centerHex.r - viewRadius; r <= centerHex.r + viewRadius; r++) {
         const hex = { q, r };
-        const color = this.getHexColor(hex);
-        this.renderHex(hex, color);
-        hexCount++;
+        const distance = HexUtils.hexDistance(centerHex, hex);
+        
+        if (distance <= viewRadius) {
+          const key = `${hex.q},${hex.r}`;
+          if (!this.hexGraphics.has(key)) {
+            const color = this.getHexColor(hex);
+            this.renderHex(hex, color);
+          }
+          renderedHexes.add(key);
+        }
       }
     }
-    console.log('Rendered', hexCount, 'hexes');
+
+    // Remove hexes that are now too far away
+    this.hexGraphics.forEach((graphics, key) => {
+      if (!renderedHexes.has(key)) {
+        this.hexContainer.removeChild(graphics);
+        this.hexGraphics.delete(key);
+      }
+    });
   }
 
   private getHexColor(hex: HexCoordinate): number {
@@ -175,6 +194,12 @@ export class HexRenderer {
   }
 
   renderSettler(settler: Settler) {
+    // Center camera on settler
+    this.centerCameraOnHex(settler.position);
+    
+    // Render visible area around settler
+    this.renderVisibleArea(settler.position);
+    
     if (this.settlerGraphics) {
       this.hexContainer.removeChild(this.settlerGraphics);
     }
@@ -201,6 +226,10 @@ export class HexRenderer {
 
   getCanvas(): HTMLCanvasElement {
     return this.app.view as HTMLCanvasElement;
+  }
+
+  getCameraOffset(): { x: number; y: number } {
+    return { x: this.hexContainer.x, y: this.hexContainer.y };
   }
 
   destroy() {

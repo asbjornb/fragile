@@ -11,7 +11,10 @@ export class Game {
   constructor(container: HTMLElement) {
     this.renderer = new HexRenderer(container);
     this.settlerSystem = new SettlerSystem();
-    this.inputSystem = new InputSystem(this.renderer.getCanvas());
+    this.inputSystem = new InputSystem(
+      this.renderer.getCanvas(),
+      () => this.renderer.getCameraOffset()
+    );
 
     this.setupInputHandling();
     this.render();

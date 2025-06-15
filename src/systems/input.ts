@@ -5,9 +5,11 @@ export type InputHandler = (hex: HexCoordinate) => void;
 export class InputSystem {
   private canvas: HTMLCanvasElement;
   private clickHandler?: InputHandler;
+  private getCameraOffset: () => { x: number; y: number };
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, getCameraOffset: () => { x: number; y: number }) {
     this.canvas = canvas;
+    this.getCameraOffset = getCameraOffset;
     this.setupEventListeners();
   }
 
@@ -23,10 +25,12 @@ export class InputSystem {
     const canvasX = event.clientX - rect.left;
     const canvasY = event.clientY - rect.top;
 
+    // Get camera offset
+    const cameraOffset = this.getCameraOffset();
+    
     // Convert canvas coordinates to world coordinates
-    // Account for the camera offset (screen center)
-    const worldX = canvasX - this.canvas.width / 2;
-    const worldY = canvasY - this.canvas.height / 2;
+    const worldX = canvasX - cameraOffset.x;
+    const worldY = canvasY - cameraOffset.y;
 
     const hex = HexUtils.pixelToHex(worldX, worldY);
     this.clickHandler(hex);
