@@ -28,6 +28,19 @@ npm install
 npm run dev
 ```
 
+## Testing
+
+```bash
+# Install Playwright browsers (first time only)
+npm run test:install
+
+# Run tests
+npm run test
+
+# Run tests with UI
+npm run test:ui
+```
+
 ## Hosting
 
 Designed for static hosting on platforms like Cloudflare Pages.
