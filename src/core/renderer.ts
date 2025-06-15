@@ -9,6 +9,8 @@ export class HexRenderer {
   private hexGraphics: Map<string, PIXI.Graphics> = new Map();
   private visibilitySystem: VisibilitySystem;
   private settlerGraphics?: PIXI.Graphics;
+  private uiContainer: PIXI.Container;
+  private foodText?: PIXI.Text;
 
   constructor(container: HTMLElement) {
     console.log('Container dimensions:', container.clientWidth, container.clientHeight);
@@ -27,16 +29,35 @@ export class HexRenderer {
     this.hexContainer = new PIXI.Container();
     this.app.stage.addChild(this.hexContainer);
     
+    this.uiContainer = new PIXI.Container();
+    this.app.stage.addChild(this.uiContainer);
+    
     this.visibilitySystem = new VisibilitySystem();
     this.visibilitySystem.updateVisibility({ q: 0, r: 0 }, 2);
 
     this.setupCamera();
+    this.setupUI();
     this.renderInitialGrid();
   }
 
   private setupCamera() {
     this.hexContainer.x = this.app.screen.width / 2;
     this.hexContainer.y = this.app.screen.height / 2;
+  }
+
+  private setupUI() {
+    const style = new PIXI.TextStyle({
+      fontFamily: 'Arial',
+      fontSize: 18,
+      fill: 0xffffff,
+      align: 'left'
+    });
+
+    this.foodText = new PIXI.Text('Food: 20', style);
+    this.foodText.x = this.app.screen.width - 120;
+    this.foodText.y = 20;
+    
+    this.uiContainer.addChild(this.foodText);
   }
 
   private renderInitialGrid() {
@@ -171,6 +192,11 @@ export class HexRenderer {
     this.settlerGraphics.drawCircle(x, y, HexUtils.HEX_SIZE * 0.4);
 
     this.hexContainer.addChild(this.settlerGraphics);
+    
+    // Update food display
+    if (this.foodText) {
+      this.foodText.text = `Food: ${settler.food}`;
+    }
   }
 
   getCanvas(): HTMLCanvasElement {
