@@ -32,6 +32,11 @@ Thumbs.db
 # Coverage
 coverage/
 
+# Testing
+test-results/
+playwright-report/
+playwright/.cache/
+
 # Cache
 .cache/
 .parcel-cache/
