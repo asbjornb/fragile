@@ -1,4 +1,5 @@
 import './style.css'
+import { HexRenderer } from './core/renderer'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
@@ -9,3 +10,10 @@ app.innerHTML = `
     <div id="game-container"></div>
   </div>
 `
+
+const gameContainer = document.querySelector<HTMLDivElement>('#game-container')!
+const renderer = new HexRenderer(gameContainer)
+
+window.addEventListener('beforeunload', () => {
+  renderer.destroy()
+})
