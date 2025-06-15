@@ -7,12 +7,16 @@ export class HexRenderer {
   private hexGraphics: Map<string, PIXI.Graphics> = new Map();
 
   constructor(container: HTMLElement) {
+    console.log('Container dimensions:', container.clientWidth, container.clientHeight);
+    
     this.app = new PIXI.Application({
-      width: container.clientWidth,
-      height: container.clientHeight,
+      width: container.clientWidth || 800,
+      height: container.clientHeight || 600,
       backgroundColor: 0x1a1a1a,
       antialias: true,
     });
+
+    console.log('PIXI app created:', this.app.screen.width, this.app.screen.height);
 
     container.appendChild(this.app.view as HTMLCanvasElement);
 
@@ -29,16 +33,20 @@ export class HexRenderer {
   }
 
   private renderInitialGrid() {
-    const gridRadius = 8;
+    const gridRadius = 6;
+    console.log('Rendering grid with radius:', gridRadius);
     
+    let hexCount = 0;
     for (let q = -gridRadius; q <= gridRadius; q++) {
       const r1 = Math.max(-gridRadius, -q - gridRadius);
       const r2 = Math.min(gridRadius, -q + gridRadius);
       
       for (let r = r1; r <= r2; r++) {
         this.renderHex({ q, r }, 0x333333);
+        hexCount++;
       }
     }
+    console.log('Rendered', hexCount, 'hexes');
   }
 
   private renderHex(hex: HexCoordinate, color: number) {

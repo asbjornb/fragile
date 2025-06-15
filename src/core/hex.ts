@@ -4,7 +4,7 @@ export interface HexCoordinate {
 }
 
 export class HexUtils {
-  static readonly HEX_SIZE = 32;
+  static readonly HEX_SIZE = 28;
   static readonly SQRT_3 = Math.sqrt(3);
 
   static hexToPixel(hex: HexCoordinate): { x: number; y: number } {
