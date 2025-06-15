@@ -119,11 +119,42 @@
 * **Audio:** Soft ambient loops with cues for events (bandit horn, winter chill).
 
 ---
-## 13 • Technical Stack
-* **Engine:** Web tech (TypeScript + PixiJS or Unity WebGL if using Unity).
-* **Language:** JavaScript/TypeScript or C# (if Unity).
-* **Save System:** Browser local storage – auto-saves every few ticks.
-* **Modular Data:** Tiles, buildings, techs are data-driven for future mod support.
+## 13 • Technical Stack & Architecture
+
+### Core Stack
+* **TypeScript** + **Vite** for build tooling
+* **PixiJS** for 2D rendering (hex grid, sprites, animations)
+* **Zustand** for state management (lightweight, perfect for game state)
+* **Local Storage** for save/load system
+
+### Project Structure
+```
+src/
+├── core/           # Game engine layer
+│   ├── game.ts     # Main game loop
+│   ├── world.ts    # Map generation & simulation
+│   └── save.ts     # Save/load system
+├── entities/       # Game objects
+│   ├── settler.ts
+│   ├── city.ts
+│   └── buildings/
+├── systems/        # Game systems
+│   ├── movement.ts
+│   ├── resources.ts
+│   ├── events.ts
+│   └── prestige.ts
+├── ui/            # React components for UI panels
+├── data/          # JSON configs for buildings, tech, etc.
+└── assets/        # Sprites, audio
+```
+
+### Architecture Benefits
+* **Pure client-side** – Perfect for Cloudflare Pages hosting
+* **PixiJS** handles hex grid rendering efficiently
+* **TypeScript** enables data-driven design
+* **Vite** provides fast dev experience and optimized builds
+* **Zustand** keeps game state predictable for save/load
+* **Modular Data** – Tiles, buildings, techs are data-driven for future mod support
 
 ---
 ## 14 • Testing & Balance Goals
