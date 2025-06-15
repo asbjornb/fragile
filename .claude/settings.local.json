@@ -5,7 +5,12 @@
       "Bash(git config:*)",
       "Bash(npm create:*)",
       "Bash(mkdir:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(npx @playwright/test:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run test:install:*)",
+      "Bash(npm run test:*)"
     ],
     "deny": []
   }
