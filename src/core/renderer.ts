@@ -1,10 +1,12 @@
 import * as PIXI from 'pixi.js';
 import { HexCoordinate, HexUtils } from './hex';
+import { VisibilitySystem } from '../systems/visibility';
 
 export class HexRenderer {
   private app: PIXI.Application;
   private hexContainer: PIXI.Container;
   private hexGraphics: Map<string, PIXI.Graphics> = new Map();
+  private visibilitySystem: VisibilitySystem;
 
   constructor(container: HTMLElement) {
     console.log('Container dimensions:', container.clientWidth, container.clientHeight);
@@ -22,6 +24,9 @@ export class HexRenderer {
 
     this.hexContainer = new PIXI.Container();
     this.app.stage.addChild(this.hexContainer);
+    
+    this.visibilitySystem = new VisibilitySystem();
+    this.visibilitySystem.updateVisibility({ q: 0, r: 0 }, 2);
 
     this.setupCamera();
     this.renderInitialGrid();
@@ -42,11 +47,23 @@ export class HexRenderer {
       const r2 = Math.min(gridRadius, -q + gridRadius);
       
       for (let r = r1; r <= r2; r++) {
-        this.renderHex({ q, r }, 0x333333);
+        const hex = { q, r };
+        const color = this.getHexColor(hex);
+        this.renderHex(hex, color);
         hexCount++;
       }
     }
     console.log('Rendered', hexCount, 'hexes');
+  }
+
+  private getHexColor(hex: HexCoordinate): number {
+    if (this.visibilitySystem.isVisible(hex)) {
+      return 0x444444; // Visible - lighter gray
+    } else if (this.visibilitySystem.isExplored(hex)) {
+      return 0x222222; // Explored but not visible - darker gray
+    } else {
+      return 0x000000; // Unexplored - black (fog of war)
+    }
   }
 
   private renderHex(hex: HexCoordinate, color: number) {
@@ -75,6 +92,38 @@ export class HexRenderer {
 
     this.hexContainer.addChild(graphics);
     this.hexGraphics.set(key, graphics);
+  }
+
+  updateVisibility(viewerPosition: HexCoordinate, viewRange: number = 2) {
+    this.visibilitySystem.updateVisibility(viewerPosition, viewRange);
+    this.updateAllHexColors();
+  }
+
+  private updateAllHexColors() {
+    this.hexGraphics.forEach((graphics, key) => {
+      const [q, r] = key.split(',').map(Number);
+      const hex = { q, r };
+      const color = this.getHexColor(hex);
+      this.updateHexColor(graphics, hex, color);
+    });
+  }
+
+  private updateHexColor(graphics: PIXI.Graphics, hex: HexCoordinate, color: number) {
+    graphics.clear();
+    graphics.beginFill(color);
+    graphics.lineStyle(1, 0x555555);
+    
+    const { x, y } = HexUtils.hexToPixel(hex);
+    const points: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      const hexX = x + HexUtils.HEX_SIZE * Math.cos(angle);
+      const hexY = y + HexUtils.HEX_SIZE * Math.sin(angle);
+      points.push(hexX, hexY);
+    }
+    
+    graphics.drawPolygon(points);
+    graphics.endFill();
   }
 
   updateHex(hex: HexCoordinate, color: number) {
