@@ -1,0 +1,74 @@
+{
+  "tileTypes": {
+    "plains": {
+      "id": "plains",
+      "name": "Plains",
+      "color": "#90EE90",
+      "resources": ["wild_game"],
+      "weight": 40
+    },
+    "forest": {
+      "id": "forest", 
+      "name": "Forest",
+      "color": "#228B22",
+      "resources": ["wood"],
+      "weight": 25
+    },
+    "hill": {
+      "id": "hill",
+      "name": "Hill", 
+      "color": "#8B7355",
+      "resources": ["stone"],
+      "weight": 20
+    },
+    "mountain": {
+      "id": "mountain",
+      "name": "Mountain",
+      "color": "#696969", 
+      "resources": ["ore"],
+      "weight": 10
+    },
+    "river": {
+      "id": "river",
+      "name": "River",
+      "color": "#4169E1",
+      "resources": ["fish"],
+      "weight": 3
+    },
+    "lake": {
+      "id": "lake",
+      "name": "Lake", 
+      "color": "#0000CD",
+      "resources": ["fish"],
+      "weight": 2
+    }
+  },
+  
+  "resources": {
+    "wood": {
+      "id": "wood",
+      "name": "Wood",
+      "color": "#8B4513"
+    },
+    "stone": {
+      "id": "stone", 
+      "name": "Stone",
+      "color": "#708090"
+    },
+    "ore": {
+      "id": "ore",
+      "name": "Ore", 
+      "color": "#C0C0C0"
+    },
+    "wild_game": {
+      "id": "wild_game",
+      "name": "Wild Game",
+      "color": "#FF6347"
+    },
+    "fish": {
+      "id": "fish",
+      "name": "Fish",
+      "color": "#00CED1"
+    }
+  }
+}

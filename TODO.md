@@ -13,6 +13,7 @@
 
 ### High Priority
 - ⏳ **Create tile types and resource node generation** (NEXT)
+- ⏳ Update spec with decisions made.
 
 ### Medium Priority
 - ⏳ Build basic UI overlay with resource display

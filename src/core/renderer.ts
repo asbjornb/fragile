@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import { HexCoordinate, HexUtils } from './hex';
 import { VisibilitySystem } from '../systems/visibility';
 import { Settler } from '../entities/settler';
+import { WorldGenerator, Tile } from '../systems/worldgen';
 
 export class HexRenderer {
   private app: PIXI.Application;
@@ -12,6 +13,7 @@ export class HexRenderer {
   private uiContainer: PIXI.Container;
   private foodText?: PIXI.Text;
   private isAnimating: boolean = false;
+  private worldGenerator: WorldGenerator;
 
   constructor(container: HTMLElement) {
     console.log('Container dimensions:', container.clientWidth, container.clientHeight);
@@ -35,6 +37,8 @@ export class HexRenderer {
     
     this.visibilitySystem = new VisibilitySystem();
     this.visibilitySystem.updateVisibility({ q: 0, r: 0 }, 2);
+    
+    this.worldGenerator = new WorldGenerator();
 
     this.setupCamera();
     this.setupUI();
@@ -84,6 +88,7 @@ export class HexRenderer {
           if (!this.hexGraphics.has(key)) {
             const color = this.getHexColor(hex);
             this.renderHex(hex, color);
+            this.renderResourceNode(hex);
           }
           renderedHexes.add(key);
         }
@@ -100,12 +105,21 @@ export class HexRenderer {
   }
 
   private getHexColor(hex: HexCoordinate): number {
-    if (this.visibilitySystem.isVisible(hex)) {
-      return 0x444444; // Visible - lighter gray
-    } else if (this.visibilitySystem.isExplored(hex)) {
-      return 0x222222; // Explored but not visible - darker gray
-    } else {
+    if (!this.visibilitySystem.isExplored(hex)) {
       return 0x000000; // Unexplored - black (fog of war)
+    }
+    
+    const tile = this.worldGenerator.generateTile(hex);
+    const baseColor = parseInt(tile.type.color.replace('#', ''), 16);
+    
+    if (this.visibilitySystem.isVisible(hex)) {
+      return baseColor; // Visible - full color
+    } else {
+      // Explored but not visible - darker version
+      const r = Math.floor(((baseColor >> 16) & 0xff) * 0.4);
+      const g = Math.floor(((baseColor >> 8) & 0xff) * 0.4);
+      const b = Math.floor((baseColor & 0xff) * 0.4);
+      return (r << 16) | (g << 8) | b;
     }
   }
 
@@ -286,6 +300,27 @@ export class HexRenderer {
 
   getCanvas(): HTMLCanvasElement {
     return this.app.view as HTMLCanvasElement;
+  }
+
+  private renderResourceNode(hex: HexCoordinate) {
+    if (!this.visibilitySystem.isVisible(hex)) return;
+    
+    const tile = this.worldGenerator.generateTile(hex);
+    if (!tile.hasResource || !tile.resourceType) return;
+    
+    const { x, y } = HexUtils.hexToPixel(hex);
+    const resourceColor = parseInt(tile.resourceType.color.replace('#', ''), 16);
+    
+    const resourceGraphics = new PIXI.Graphics();
+    resourceGraphics.beginFill(resourceColor);
+    resourceGraphics.drawCircle(x, y, HexUtils.HEX_SIZE * 0.2);
+    resourceGraphics.endFill();
+    
+    // White border for visibility
+    resourceGraphics.lineStyle(1, 0xffffff);
+    resourceGraphics.drawCircle(x, y, HexUtils.HEX_SIZE * 0.2);
+    
+    this.hexContainer.addChild(resourceGraphics);
   }
 
   getCameraOffset(): { x: number; y: number } {
