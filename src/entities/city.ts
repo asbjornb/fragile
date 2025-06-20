@@ -328,6 +328,40 @@ export class CitySystem {
     this.applyBuildingEffects();
   }
 
+  // Worker assignment by building type
+  assignWorkerToType(buildingTypeId: string): boolean {
+    if (!this.city) return false;
+
+    // Find the first building of this type that has available worker slots
+    const building = this.city.buildings.find(b => 
+      b.type === buildingTypeId && 
+      b.assignedWorkers < b.maxWorkers
+    );
+    
+    if (!building) return false;
+    if (this.city.availableWorkers <= 0) return false;
+
+    building.assignedWorkers++;
+    this.applyBuildingEffects();
+    return true;
+  }
+
+  unassignWorkerFromType(buildingTypeId: string): boolean {
+    if (!this.city) return false;
+
+    // Find the first building of this type that has assigned workers
+    const building = this.city.buildings.find(b => 
+      b.type === buildingTypeId && 
+      b.assignedWorkers > 0
+    );
+    
+    if (!building) return false;
+
+    building.assignedWorkers--;
+    this.applyBuildingEffects();
+    return true;
+  }
+
   // Get worker assignment info for debugging
   getWorkerInfo(): { population: number; assigned: number; available: number; buildings: Array<{name: string; assigned: number; max: number}> } {
     if (!this.city) return { population: 0, assigned: 0, available: 0, buildings: [] };

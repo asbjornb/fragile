@@ -160,27 +160,46 @@ export class Game {
     const city = this.citySystem.getCity();
     if (!city) return;
 
-    const buildingsList = city.buildings.filter(b => b.type !== 'town_hall').map(building => {
+    // Group buildings by type and count them
+    const buildingCounts = new Map<string, { count: number; totalWorkers: number; maxWorkers: number; buildingType: any }>();
+    
+    city.buildings.filter(b => b.type !== 'town_hall').forEach(building => {
       const buildingType = this.citySystem.getBuildingTypes().find(bt => bt.id === building.type);
+      const existing = buildingCounts.get(building.type) || { count: 0, totalWorkers: 0, maxWorkers: 0, buildingType };
       
-      if (building.maxWorkers > 0) {
-        // Building that can have workers - show +/- buttons
-        return `<div style="font-size: 14px; margin: 6px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-weight: 500;">${buildingType?.icon || '🏗️'} ${building.name}</span>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <button class="worker-btn" data-action="unassign" data-building="${building.id}" 
-                    style="width: 24px; height: 24px; font-size: 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;"
-                    ${building.assignedWorkers === 0 ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>-</button>
-            <span style="min-width: 40px; text-align: center; font-weight: bold; font-size: 14px;">${building.assignedWorkers}/${building.maxWorkers}👷</span>
-            <button class="worker-btn" data-action="assign" data-building="${building.id}"
-                    style="width: 24px; height: 24px; font-size: 14px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;"
-                    ${(building.assignedWorkers >= building.maxWorkers || city.availableWorkers === 0) ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>+</button>
+      buildingCounts.set(building.type, {
+        count: existing.count + 1,
+        totalWorkers: existing.totalWorkers + building.assignedWorkers,
+        maxWorkers: existing.maxWorkers + building.maxWorkers,
+        buildingType
+      });
+    });
+
+    const buildingsList = Array.from(buildingCounts.entries()).map(([buildingTypeId, data]) => {
+      if (data.maxWorkers > 0) {
+        // Building type that can have workers - stack layout
+        return `<div style="font-size: 13px; margin: 4px 0; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <span style="font-weight: 500;">${data.buildingType?.icon || '🏗️'} ${data.buildingType?.name || buildingTypeId}</span>
+            <span style="color: #bdc3c7; font-size: 12px;">(${data.count})</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12px; color: #95a5a6;">Workers: ${data.totalWorkers}/${data.maxWorkers}</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button class="worker-btn" data-action="unassign" data-building-type="${buildingTypeId}" 
+                      style="width: 22px; height: 22px; font-size: 12px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer;"
+                      ${data.totalWorkers === 0 ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>-</button>
+              <button class="worker-btn" data-action="assign" data-building-type="${buildingTypeId}"
+                      style="width: 22px; height: 22px; font-size: 12px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer;"
+                      ${(data.totalWorkers >= data.maxWorkers || city.availableWorkers === 0) ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>+</button>
+            </div>
           </div>
         </div>`;
       } else {
-        // Building that doesn't use workers
-        return `<div style="font-size: 14px; margin: 6px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px;">
-          <span style="font-weight: 500;">${buildingType?.icon || '🏗️'} ${building.name}</span>
+        // Building type that doesn't use workers - compact layout
+        return `<div style="font-size: 13px; margin: 4px 0; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-weight: 500;">${data.buildingType?.icon || '🏗️'} ${data.buildingType?.name || buildingTypeId}</span>
+          <span style="color: #bdc3c7; font-size: 12px;">(${data.count})</span>
         </div>`;
       }
     }).join('');
@@ -304,19 +323,19 @@ export class Game {
       button.addEventListener('click', (e) => {
         const target = e.target as HTMLButtonElement;
         const action = target.dataset.action;
-        const buildingId = target.dataset.building;
+        const buildingType = target.dataset.buildingType;
         
-        if (!action || !buildingId) return;
+        if (!action || !buildingType) return;
         
         if (action === 'assign') {
-          if (this.citySystem.assignWorker(buildingId)) {
-            console.log('Worker assigned');
+          if (this.citySystem.assignWorkerToType(buildingType)) {
+            console.log('Worker assigned to', buildingType);
             console.log('Worker info:', this.citySystem.getWorkerInfo());
             this.refreshManagementBar();
           }
         } else if (action === 'unassign') {
-          if (this.citySystem.unassignWorker(buildingId)) {
-            console.log('Worker unassigned');
+          if (this.citySystem.unassignWorkerFromType(buildingType)) {
+            console.log('Worker unassigned from', buildingType);
             console.log('Worker info:', this.citySystem.getWorkerInfo());
             this.refreshManagementBar();
           }

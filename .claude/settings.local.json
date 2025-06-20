@@ -15,7 +15,12 @@
       "Bash(timeout 30 npx playwright test --grep \"should load game with hex grid\")",
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(rm:*)",
+      "Bash(npx typescript:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
