@@ -217,6 +217,17 @@ export class CitySystem {
       }
     });
 
+    // Update population and workers based on max population
+    this.city.population = Math.min(this.city.population, this.city.maxPopulation);
+    
+    // Calculate total assigned workers
+    const assignedWorkers = this.city.buildings.reduce((total, building) => {
+      return total + building.assignedWorkers;
+    }, 0);
+    
+    // Available workers = population - assigned workers
+    this.city.availableWorkers = this.city.population - assignedWorkers;
+
     // Cap resources to storage limits
     this.city.resources.food = Math.min(this.city.resources.food, this.city.storage.food);
     this.city.resources.wood = Math.min(this.city.resources.wood, this.city.storage.wood);
@@ -237,6 +248,17 @@ export class CitySystem {
       this.city.storage.stone
     );
 
+    // Population growth (if we have food surplus and space)
+    if (this.city.resources.food >= 3 && this.city.population < this.city.maxPopulation) {
+      // Every 5 ticks with food surplus, grow population
+      const growthChance = 0.2; // 20% chance per tick when conditions are met
+      if (Math.random() < growthChance) {
+        this.city.population++;
+        this.city.resources.food -= 3; // Population growth consumes food
+        this.applyBuildingEffects(); // Recalculate available workers
+      }
+    }
+
     // Building production (with workers)
     this.city.buildings.forEach(building => {
       const buildingType = this.buildingTypes.get(building.type);
@@ -247,19 +269,19 @@ export class CitySystem {
 
       if (effects.foodPerTick) {
         this.city!.resources.food = Math.min(
-          this.city!.resources.food + (effects.foodPerTick * workerRatio * building.level),
+          this.city!.resources.food + Math.floor(effects.foodPerTick * workerRatio * building.level),
           this.city!.storage.food
         );
       }
       if (effects.woodPerTick) {
         this.city!.resources.wood = Math.min(
-          this.city!.resources.wood + (effects.woodPerTick * workerRatio * building.level),
+          this.city!.resources.wood + Math.floor(effects.woodPerTick * workerRatio * building.level),
           this.city!.storage.wood
         );
       }
       if (effects.stonePerTick) {
         this.city!.resources.stone = Math.min(
-          this.city!.resources.stone + (effects.stonePerTick * workerRatio * building.level),
+          this.city!.resources.stone + Math.floor(effects.stonePerTick * workerRatio * building.level),
           this.city!.storage.stone
         );
       }
@@ -277,7 +299,8 @@ export class CitySystem {
     if (building.assignedWorkers >= building.maxWorkers) return false;
 
     building.assignedWorkers++;
-    this.city.availableWorkers--;
+    // Recalculate available workers
+    this.applyBuildingEffects();
     return true;
   }
 
@@ -290,7 +313,39 @@ export class CitySystem {
     if (building.assignedWorkers <= 0) return false;
 
     building.assignedWorkers--;
-    this.city.availableWorkers++;
+    // Recalculate available workers
+    this.applyBuildingEffects();
     return true;
+  }
+
+  // Unassign all workers from all buildings
+  unassignAllWorkers(): void {
+    if (!this.city) return;
+
+    this.city.buildings.forEach(building => {
+      building.assignedWorkers = 0;
+    });
+    this.applyBuildingEffects();
+  }
+
+  // Get worker assignment info for debugging
+  getWorkerInfo(): { population: number; assigned: number; available: number; buildings: Array<{name: string; assigned: number; max: number}> } {
+    if (!this.city) return { population: 0, assigned: 0, available: 0, buildings: [] };
+
+    const assigned = this.city.buildings.reduce((total, building) => total + building.assignedWorkers, 0);
+    const buildings = this.city.buildings
+      .filter(b => b.maxWorkers > 0)
+      .map(b => ({
+        name: b.name,
+        assigned: b.assignedWorkers,
+        max: b.maxWorkers
+      }));
+
+    return {
+      population: this.city.population,
+      assigned,
+      available: this.city.availableWorkers,
+      buildings
+    };
   }
 }

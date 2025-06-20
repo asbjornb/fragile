@@ -170,7 +170,7 @@ export class Game {
         <div>Food: <span style="color: #2ecc71;">${city.resources.food}/${city.storage.food}</span></div>
         <div>Wood: <span style="color: #8b4513;">${city.resources.wood}/${city.storage.wood}</span></div>
         <div>Stone: <span style="color: #95a5a6;">${city.resources.stone}/${city.storage.stone}</span></div>
-        <div>Workers: <span style="color: #f39c12;">${city.availableWorkers}</span></div>
+        <div>Workers: <span style="color: #f39c12;">${city.availableWorkers}/${city.population}</span></div>
       </div>
     `;
 
@@ -184,14 +184,33 @@ export class Game {
     
     const buildingsList = city.buildings.filter(b => b.type !== 'town_hall').map(building => {
       const buildingType = this.citySystem.getBuildingTypes().find(bt => bt.id === building.type);
-      const workerInfo = building.maxWorkers > 0 ? ` (${building.assignedWorkers}/${building.maxWorkers}👷)` : '';
-      return `<div style="font-size: 12px; margin: 2px 0; padding: 2px 4px; background: rgba(255,255,255,0.1); border-radius: 3px;">
-        ${buildingType?.icon || '🏗️'} ${building.name}${workerInfo}
-      </div>`;
+      
+      if (building.maxWorkers > 0) {
+        // Building that can have workers - show +/- buttons
+        return `<div style="font-size: 12px; margin: 2px 0; padding: 2px 4px; background: rgba(255,255,255,0.1); border-radius: 3px; display: flex; align-items: center; justify-content: space-between;">
+          <span>${buildingType?.icon || '🏗️'} ${building.name}</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button class="worker-btn" data-action="unassign" data-building="${building.id}" 
+                    style="width: 16px; height: 16px; font-size: 10px; background: #e74c3c; color: white; border: none; border-radius: 2px; cursor: pointer;"
+                    ${building.assignedWorkers === 0 ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>-</button>
+            <span style="min-width: 30px; text-align: center;">${building.assignedWorkers}/${building.maxWorkers}👷</span>
+            <button class="worker-btn" data-action="assign" data-building="${building.id}"
+                    style="width: 16px; height: 16px; font-size: 10px; background: #27ae60; color: white; border: none; border-radius: 2px; cursor: pointer;"
+                    ${(building.assignedWorkers >= building.maxWorkers || city.availableWorkers === 0) ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>+</button>
+          </div>
+        </div>`;
+      } else {
+        // Building that doesn't use workers
+        return `<div style="font-size: 12px; margin: 2px 0; padding: 2px 4px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+          ${buildingType?.icon || '🏗️'} ${building.name}
+        </div>`;
+      }
     }).join('');
     
     buildingsDiv.innerHTML = `
-      <h4 style="margin: 0 0 5px 0; font-size: 16px;">Buildings (${city.buildings.length - 1})</h4>
+      <h4 style="margin: 0 0 5px 0; font-size: 16px;">Buildings (${city.buildings.length - 1})
+        <button id="unassign-all" style="margin-left: 10px; padding: 2px 6px; font-size: 10px; background: #e67e22; color: white; border: none; border-radius: 3px; cursor: pointer;">Unassign All</button>
+      </h4>
       <div style="max-height: 60px; overflow-y: auto;">
         ${buildingsList || '<div style="font-size: 12px; color: #7f8c8d;">No buildings yet</div>'}
       </div>
@@ -245,6 +264,9 @@ export class Game {
     this.managementBar.appendChild(buildOptionsDiv);
 
     document.body.appendChild(this.managementBar);
+    
+    // Add event listeners for worker assignment buttons
+    this.setupWorkerButtons();
   }
 
   private buildBuilding(buildingTypeId: string) {
@@ -255,6 +277,47 @@ export class Game {
     } else {
       console.log(`Failed to build: ${result.error}`);
       // Could show a notification to the user here
+    }
+  }
+
+  private setupWorkerButtons() {
+    if (!this.managementBar) return;
+    
+    // Worker assignment buttons
+    const workerButtons = this.managementBar.querySelectorAll('.worker-btn');
+    workerButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const target = e.target as HTMLButtonElement;
+        const action = target.dataset.action;
+        const buildingId = target.dataset.building;
+        
+        if (!action || !buildingId) return;
+        
+        if (action === 'assign') {
+          if (this.citySystem.assignWorker(buildingId)) {
+            console.log('Worker assigned');
+            console.log('Worker info:', this.citySystem.getWorkerInfo());
+            this.refreshManagementBar();
+          }
+        } else if (action === 'unassign') {
+          if (this.citySystem.unassignWorker(buildingId)) {
+            console.log('Worker unassigned');
+            console.log('Worker info:', this.citySystem.getWorkerInfo());
+            this.refreshManagementBar();
+          }
+        }
+      });
+    });
+
+    // Unassign all button
+    const unassignAllBtn = this.managementBar.querySelector('#unassign-all');
+    if (unassignAllBtn) {
+      unassignAllBtn.addEventListener('click', () => {
+        this.citySystem.unassignAllWorkers();
+        console.log('All workers unassigned');
+        console.log('Worker info:', this.citySystem.getWorkerInfo());
+        this.refreshManagementBar();
+      });
     }
   }
 
