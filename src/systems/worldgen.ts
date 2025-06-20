@@ -83,8 +83,8 @@ export class WorldGenerator {
     // Use different seed offset for resource generation
     const resourceRandom = this.seededRandom({ q: hex.q + 1000, r: hex.r + 1000 });
     
-    // 30% chance of having a resource
-    if (resourceRandom < 0.3) {
+    // 12% chance of having a resource (reduced from 30% - was too common)
+    if (resourceRandom < 0.12) {
       const resourceId = tileType.resources[Math.floor(this.seededRandom({ q: hex.q + 2000, r: hex.r + 2000 }) * tileType.resources.length)];
       const resourceType = this.resourceTypes.get(resourceId);
       
