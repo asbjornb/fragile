@@ -3,7 +3,7 @@
     "plains": {
       "id": "plains",
       "name": "Plains",
-      "color": "#90EE90",
+      "color": "#9ACD32",
       "resources": ["wild_game"],
       "weight": 40
     },
@@ -17,28 +17,28 @@
     "hill": {
       "id": "hill",
       "name": "Hill", 
-      "color": "#8B7355",
+      "color": "#DAA520",
       "resources": ["stone"],
       "weight": 20
     },
     "mountain": {
       "id": "mountain",
       "name": "Mountain",
-      "color": "#696969", 
+      "color": "#708090", 
       "resources": ["ore"],
       "weight": 10
     },
     "river": {
       "id": "river",
       "name": "River",
-      "color": "#4169E1",
+      "color": "#00BFFF",
       "resources": ["fish"],
       "weight": 3
     },
     "lake": {
       "id": "lake",
       "name": "Lake", 
-      "color": "#0000CD",
+      "color": "#1E90FF",
       "resources": ["fish"],
       "weight": 2
     }
