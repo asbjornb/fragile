@@ -1,0 +1,84 @@
+{
+  "buildings": {
+    "hut": {
+      "id": "hut",
+      "name": "Hut",
+      "description": "Basic housing for growing population",
+      "cost": {
+        "wood": 8,
+        "food": 2
+      },
+      "effects": {
+        "populationCapacity": 2
+      },
+      "buildTime": 1,
+      "maxLevel": 3,
+      "icon": "🏠"
+    },
+    "farm": {
+      "id": "farm",
+      "name": "Farm",
+      "description": "Produces food with 1 worker assigned",
+      "cost": {
+        "wood": 5,
+        "stone": 2
+      },
+      "effects": {
+        "foodPerTick": 3
+      },
+      "requiresWorker": true,
+      "requiresTerrain": ["plains"],
+      "buildTime": 2,
+      "maxLevel": 3,
+      "icon": "🌾"
+    },
+    "shed": {
+      "id": "shed",
+      "name": "Shed",
+      "description": "Increases wood storage capacity",
+      "cost": {
+        "wood": 10
+      },
+      "effects": {
+        "woodStorage": 25
+      },
+      "buildTime": 1,
+      "maxLevel": 5,
+      "icon": "🏚️"
+    },
+    "lumber_yard": {
+      "id": "lumber_yard",
+      "name": "Lumber Yard",
+      "description": "Produces wood with 1 worker assigned",
+      "cost": {
+        "wood": 6,
+        "stone": 4
+      },
+      "effects": {
+        "woodPerTick": 2
+      },
+      "requiresWorker": true,
+      "requiresTerrain": ["forest"],
+      "buildTime": 2,
+      "maxLevel": 3,
+      "icon": "🪓"
+    },
+    "quarry": {
+      "id": "quarry",
+      "name": "Quarry",
+      "description": "Produces stone with 1 worker assigned",
+      "cost": {
+        "wood": 8,
+        "food": 3
+      },
+      "effects": {
+        "stonePerTick": 2
+      },
+      "requiresWorker": true,
+      "requiresTerrain": ["hill", "mountain"],
+      "buildTime": 3,
+      "maxLevel": 3,
+      "icon": "⛏️"
+    }
+  }
+}

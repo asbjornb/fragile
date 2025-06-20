@@ -160,61 +160,110 @@ export class Game {
     // Resources section
     const resourcesDiv = document.createElement('div');
     resourcesDiv.style.color = 'white';
-    resourcesDiv.style.marginRight = '30px';
-    resourcesDiv.style.minWidth = '200px';
+    resourcesDiv.style.marginRight = '20px';
+    resourcesDiv.style.minWidth = '180px';
     resourcesDiv.innerHTML = `
       <h4 style="margin: 0 0 5px 0; font-size: 16px;">Resources</h4>
-      <div style="font-size: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-        <div>Food: <span style="color: #2ecc71;">${city.resources.food}</span></div>
-        <div>Wood: <span style="color: #8b4513;">${city.resources.wood}</span></div>
-        <div>Stone: <span style="color: #95a5a6;">${city.resources.stone}</span></div>
-        <div>Research: <span style="color: #9b59b6;">${city.resources.research}</span></div>
+      <div style="font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px;">
+        <div>Food: <span style="color: #2ecc71;">${city.resources.food}/${city.storage.food}</span></div>
+        <div>Wood: <span style="color: #8b4513;">${city.resources.wood}/${city.storage.wood}</span></div>
+        <div>Stone: <span style="color: #95a5a6;">${city.resources.stone}/${city.storage.stone}</span></div>
+        <div>Workers: <span style="color: #f39c12;">${city.availableWorkers}</span></div>
       </div>
     `;
 
-    // Actions section
-    const actionsDiv = document.createElement('div');
-    actionsDiv.style.display = 'flex';
-    actionsDiv.style.gap = '10px';
-    actionsDiv.style.marginLeft = 'auto';
+    // Buildings section (left side)
+    const buildingsDiv = document.createElement('div');
+    buildingsDiv.style.color = 'white';
+    buildingsDiv.style.marginRight = '20px';
+    buildingsDiv.style.minWidth = '250px';
+    buildingsDiv.style.maxHeight = '100px';
+    buildingsDiv.style.overflowY = 'auto';
+    
+    const buildingsList = city.buildings.filter(b => b.type !== 'town_hall').map(building => {
+      const buildingType = this.citySystem.getBuildingTypes().find(bt => bt.id === building.type);
+      const workerInfo = building.maxWorkers > 0 ? ` (${building.assignedWorkers}/${building.maxWorkers}👷)` : '';
+      return `<div style="font-size: 12px; margin: 2px 0; padding: 2px 4px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+        ${buildingType?.icon || '🏗️'} ${building.name}${workerInfo}
+      </div>`;
+    }).join('');
+    
+    buildingsDiv.innerHTML = `
+      <h4 style="margin: 0 0 5px 0; font-size: 16px;">Buildings (${city.buildings.length - 1})</h4>
+      <div style="max-height: 60px; overflow-y: auto;">
+        ${buildingsList || '<div style="font-size: 12px; color: #7f8c8d;">No buildings yet</div>'}
+      </div>
+    `;
 
-    // Build button (disabled for now)
-    const buildButton = document.createElement('button');
-    buildButton.textContent = 'Build';
-    buildButton.style.padding = '10px 20px';
-    buildButton.style.backgroundColor = '#7f8c8d';
-    buildButton.style.color = '#bdc3c7';
-    buildButton.style.border = 'none';
-    buildButton.style.borderRadius = '5px';
-    buildButton.style.cursor = 'not-allowed';
-    buildButton.style.fontSize = '14px';
-    buildButton.disabled = true;
-    buildButton.title = 'Coming soon - Build system in development';
+    // Build options section (right side)
+    const buildOptionsDiv = document.createElement('div');
+    buildOptionsDiv.style.marginLeft = 'auto';
+    buildOptionsDiv.style.color = 'white';
+    buildOptionsDiv.style.minWidth = '300px';
+    
+    const availableBuildings = this.citySystem.getBuildingTypes();
+    const buildButtons = availableBuildings.map(buildingType => {
+      const canBuild = this.citySystem.canBuildBuilding(buildingType.id);
+      const button = document.createElement('button');
+      button.textContent = `${buildingType.icon} ${buildingType.name}`;
+      button.style.padding = '4px 8px';
+      button.style.margin = '1px';
+      button.style.fontSize = '11px';
+      button.style.border = 'none';
+      button.style.borderRadius = '3px';
+      button.style.cursor = canBuild.canBuild ? 'pointer' : 'not-allowed';
+      button.style.backgroundColor = canBuild.canBuild ? '#27ae60' : '#7f8c8d';
+      button.style.color = canBuild.canBuild ? 'white' : '#bdc3c7';
+      
+      if (!canBuild.canBuild) {
+        button.title = canBuild.reason || 'Cannot build';
+        button.disabled = true;
+      } else {
+        const costText = Object.entries(buildingType.cost)
+          .map(([resource, amount]) => `${amount} ${resource}`)
+          .join(', ');
+        button.title = `${buildingType.description}\nCost: ${costText}`;
+        button.addEventListener('click', () => this.buildBuilding(buildingType.id));
+      }
+      
+      return button;
+    });
 
-    // Research button (disabled for now)
-    const researchButton = document.createElement('button');
-    researchButton.textContent = 'Research';
-    researchButton.style.padding = '10px 20px';
-    researchButton.style.backgroundColor = '#7f8c8d';
-    researchButton.style.color = '#bdc3c7';
-    researchButton.style.border = 'none';
-    researchButton.style.borderRadius = '5px';
-    researchButton.style.cursor = 'not-allowed';
-    researchButton.style.fontSize = '14px';
-    researchButton.disabled = true;
-    researchButton.title = 'Coming soon - Research system in development';
-
-    actionsDiv.appendChild(buildButton);
-    actionsDiv.appendChild(researchButton);
+    buildOptionsDiv.innerHTML = `<h4 style="margin: 0 0 5px 0; font-size: 16px;">Build</h4>`;
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.flexWrap = 'wrap';
+    buttonContainer.style.gap = '2px';
+    buildButtons.forEach(button => buttonContainer.appendChild(button));
+    buildOptionsDiv.appendChild(buttonContainer);
 
     this.managementBar.appendChild(cityInfo);
     this.managementBar.appendChild(resourcesDiv);
-    this.managementBar.appendChild(actionsDiv);
+    this.managementBar.appendChild(buildingsDiv);
+    this.managementBar.appendChild(buildOptionsDiv);
 
     document.body.appendChild(this.managementBar);
   }
 
-  // Removed popup menus - will implement proper modals later
+  private buildBuilding(buildingTypeId: string) {
+    const result = this.citySystem.buildBuilding(buildingTypeId);
+    if (result.success) {
+      console.log(`Built ${result.building?.name} successfully!`);
+      this.refreshManagementBar();
+    } else {
+      console.log(`Failed to build: ${result.error}`);
+      // Could show a notification to the user here
+    }
+  }
+
+  private refreshManagementBar() {
+    if (this.managementBar) {
+      // Remove and recreate the management bar with updated info
+      document.body.removeChild(this.managementBar);
+      this.managementBar = null;
+      this.setupCityManagement();
+    }
+  }
 
   private render() {
     const settler = this.settlerSystem.getSettler();
