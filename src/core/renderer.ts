@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import { HexCoordinate, HexUtils } from './hex';
 import { VisibilitySystem } from '../systems/visibility';
 import { Settler } from '../entities/settler';
+import { City } from '../entities/city';
 import { WorldGenerator } from '../systems/worldgen';
 
 export class HexRenderer {
@@ -10,6 +11,7 @@ export class HexRenderer {
   private hexGraphics: Map<string, PIXI.Graphics> = new Map();
   private visibilitySystem: VisibilitySystem;
   private settlerGraphics?: PIXI.Graphics;
+  private cityGraphics?: PIXI.Graphics;
   private uiContainer: PIXI.Container;
   private foodText?: PIXI.Text;
   private isAnimating: boolean = false;
@@ -566,6 +568,89 @@ export class HexRenderer {
     graphics.endFill();
     
     // No outline needed - settler is already visible with distinct colors
+  }
+
+  renderCity(city: City) {
+    // Center camera on city
+    this.centerCameraOnHex(city.position);
+    
+    // Render visible area around city
+    this.renderVisibleArea(city.position);
+    
+    if (this.cityGraphics) {
+      this.hexContainer.removeChild(this.cityGraphics);
+    }
+
+    this.cityGraphics = new PIXI.Graphics();
+    const { x, y } = HexUtils.hexToPixel(city.position);
+    
+    // Draw city sprite
+    this.drawCitySprite(this.cityGraphics, x, y, city);
+
+    this.hexContainer.addChild(this.cityGraphics);
+    
+    // Update UI with city resources instead of food
+    if (this.foodText) {
+      this.foodText.text = `${city.name} - Pop: ${city.population} | Food: ${city.resources.food}`;
+    }
+  }
+
+  private drawCitySprite(graphics: PIXI.Graphics, x: number, y: number, city: City) {
+    const size = HexUtils.HEX_SIZE * 0.6;
+    
+    // City base (larger circle)
+    graphics.beginFill(0x8B4513); // Brown base
+    graphics.drawCircle(x, y, size);
+    graphics.endFill();
+    
+    // Town hall building (central structure)
+    graphics.beginFill(0x654321); // Darker brown
+    graphics.drawRect(x - size * 0.5, y - size * 0.5, size, size * 0.8);
+    graphics.endFill();
+    
+    // Roof (triangle)
+    graphics.beginFill(0x8B0000); // Dark red roof
+    graphics.drawPolygon([
+      x - size * 0.6, y - size * 0.5,
+      x, y - size * 0.9,
+      x + size * 0.6, y - size * 0.5
+    ]);
+    graphics.endFill();
+    
+    // Small houses around the perimeter based on population
+    const houseCount = Math.min(city.population, 6);
+    for (let i = 0; i < houseCount; i++) {
+      const angle = (Math.PI * 2 * i) / 6;
+      const houseX = x + Math.cos(angle) * size * 0.8;
+      const houseY = y + Math.sin(angle) * size * 0.8;
+      
+      // Small house
+      graphics.beginFill(0x8B7355); // Tan color
+      graphics.drawRect(houseX - 4, houseY - 4, 8, 8);
+      graphics.endFill();
+      
+      // House roof
+      graphics.beginFill(0x8B0000);
+      graphics.drawPolygon([
+        houseX - 5, houseY - 4,
+        houseX, houseY - 8,
+        houseX + 5, houseY - 4
+      ]);
+      graphics.endFill();
+    }
+    
+    // City flag/banner on top
+    graphics.beginFill(0x4169E1); // Blue flag
+    graphics.drawRect(x - 2, y - size * 0.9, 4, 8);
+    graphics.endFill();
+    graphics.drawRect(x + 2, y - size * 0.9, 6, 4);
+    graphics.endFill();
+    
+    // City name text (will be handled by UI layer in future)
+    // For now, just a visual marker
+    graphics.beginFill(0xFFD700); // Gold marker
+    graphics.drawCircle(x, y - size * 1.1, 3);
+    graphics.endFill();
   }
 
   destroy() {

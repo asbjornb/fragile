@@ -6,8 +6,8 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
   <div>
     <h1>Fragile</h1>
-    <p>Click adjacent hexes to move your settler</p>
-    <div id="game-container"></div>
+    <p>Click adjacent hexes to move your settler. Click "Settle Here" to found a city!</p>
+    <div id="game-container" style="position: relative;"></div>
   </div>
 `
 
