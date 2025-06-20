@@ -16,6 +16,7 @@ export class HexRenderer {
   private foodText?: PIXI.Text;
   private isAnimating: boolean = false;
   private worldGenerator: WorldGenerator;
+  private zoomLevel: number = 1.0;
 
   constructor(container: HTMLElement) {
     console.log('Container dimensions:', container.clientWidth, container.clientHeight);
@@ -53,8 +54,9 @@ export class HexRenderer {
 
   private centerCameraOnHex(hex: HexCoordinate) {
     const { x, y } = HexUtils.hexToPixel(hex);
-    this.hexContainer.x = this.app.screen.width / 2 - x;
-    this.hexContainer.y = this.app.screen.height / 2 - y;
+    this.hexContainer.scale.set(this.zoomLevel);
+    this.hexContainer.x = this.app.screen.width / 2 - x * this.zoomLevel;
+    this.hexContainer.y = this.app.screen.height / 2 - y * this.zoomLevel;
   }
 
   private setupUI() {
@@ -76,7 +78,7 @@ export class HexRenderer {
     this.renderVisibleArea({ q: 0, r: 0 });
   }
 
-  private renderVisibleArea(centerHex: HexCoordinate) {
+  private renderVisibleArea(centerHex: HexCoordinate, hideUnexplored: boolean = false) {
     const viewRadius = 6;
     const renderedHexes = new Set<string>();
     
@@ -87,6 +89,12 @@ export class HexRenderer {
         
         if (distance <= viewRadius) {
           const key = `${hex.q},${hex.r}`;
+          
+          // Skip unexplored tiles if hideUnexplored is true
+          if (hideUnexplored && !this.visibilitySystem.isExplored(hex)) {
+            continue;
+          }
+          
           if (!this.hexGraphics.has(key)) {
             const color = this.getHexColor(hex);
             this.renderHex(hex, color);
@@ -222,8 +230,10 @@ export class HexRenderer {
       this.hexContainer.addChild(this.settlerGraphics);
       
       // Interpolate camera position
-      const targetCameraX = this.app.screen.width / 2 - (fromPixel.x + (toPixel.x - fromPixel.x) * easeProgress);
-      const targetCameraY = this.app.screen.height / 2 - (fromPixel.y + (toPixel.y - fromPixel.y) * easeProgress);
+      const currentPixelX = fromPixel.x + (toPixel.x - fromPixel.x) * easeProgress;
+      const currentPixelY = fromPixel.y + (toPixel.y - fromPixel.y) * easeProgress;
+      const targetCameraX = this.app.screen.width / 2 - currentPixelX * this.zoomLevel;
+      const targetCameraY = this.app.screen.height / 2 - currentPixelY * this.zoomLevel;
       
       this.hexContainer.x = targetCameraX;
       this.hexContainer.y = targetCameraY;
@@ -574,8 +584,8 @@ export class HexRenderer {
     // Center camera on city
     this.centerCameraOnHex(city.position);
     
-    // Render visible area around city
-    this.renderVisibleArea(city.position);
+    // Render visible area around city, hiding unexplored tiles for focused city view
+    this.renderVisibleArea(city.position, true);
     
     if (this.cityGraphics) {
       this.hexContainer.removeChild(this.cityGraphics);
@@ -651,6 +661,41 @@ export class HexRenderer {
     graphics.beginFill(0xFFD700); // Gold marker
     graphics.drawCircle(x, y - size * 1.1, 3);
     graphics.endFill();
+  }
+
+  setZoom(zoomLevel: number) {
+    this.zoomLevel = zoomLevel;
+    this.hexContainer.scale.set(this.zoomLevel);
+  }
+
+  animateZoom(targetZoom: number, duration: number = 800, onComplete?: () => void) {
+    if (this.isAnimating) return;
+    
+    this.isAnimating = true;
+    const startZoom = this.zoomLevel;
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Smooth easing
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      
+      // Interpolate zoom level
+      const currentZoom = startZoom + (targetZoom - startZoom) * easeProgress;
+      this.zoomLevel = currentZoom;
+      this.hexContainer.scale.set(this.zoomLevel);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        this.isAnimating = false;
+        if (onComplete) onComplete();
+      }
+    };
+    
+    requestAnimationFrame(animate);
   }
 
   destroy() {
