@@ -11,6 +11,7 @@ export class Game {
   private inputSystem: InputSystem;
   private settleButton: HTMLButtonElement | null = null;
   private managementBar: HTMLDivElement | null = null;
+  private gameTickInterval: number | null = null;
 
   constructor(container: HTMLElement) {
     this.renderer = new HexRenderer(container);
@@ -101,6 +102,7 @@ export class Game {
       this.renderer.renderCity(city);
       this.updateUI();
       this.setupCityManagement();
+      this.startGameTick();
     });
     
     console.log('City founded successfully!', city);
@@ -265,6 +267,18 @@ export class Game {
     }
   }
 
+  private startGameTick() {
+    if (this.gameTickInterval) return; // Already running
+    
+    // Generate resources every 2 seconds
+    this.gameTickInterval = window.setInterval(() => {
+      if (this.citySystem.hasCity()) {
+        this.citySystem.generateResources();
+        this.refreshManagementBar();
+      }
+    }, 2000);
+  }
+
   private render() {
     const settler = this.settlerSystem.getSettler();
     
@@ -279,6 +293,12 @@ export class Game {
   destroy() {
     this.inputSystem.destroy();
     this.renderer.destroy();
+    
+    // Clean up game tick
+    if (this.gameTickInterval) {
+      clearInterval(this.gameTickInterval);
+      this.gameTickInterval = null;
+    }
     
     // Clean up management bar
     if (this.managementBar) {

@@ -223,6 +223,49 @@ export class CitySystem {
     this.city.resources.stone = Math.min(this.city.resources.stone, this.city.storage.stone);
   }
 
+  // Resource production (called each tick)
+  generateResources(): void {
+    if (!this.city) return;
+
+    // Base city production (no workers needed)
+    this.city.resources.wood = Math.min(
+      this.city.resources.wood + 1, 
+      this.city.storage.wood
+    );
+    this.city.resources.stone = Math.min(
+      this.city.resources.stone + 1, 
+      this.city.storage.stone
+    );
+
+    // Building production (with workers)
+    this.city.buildings.forEach(building => {
+      const buildingType = this.buildingTypes.get(building.type);
+      if (!buildingType || building.assignedWorkers === 0) return;
+
+      const effects = buildingType.effects;
+      const workerRatio = building.assignedWorkers / building.maxWorkers;
+
+      if (effects.foodPerTick) {
+        this.city!.resources.food = Math.min(
+          this.city!.resources.food + (effects.foodPerTick * workerRatio * building.level),
+          this.city!.storage.food
+        );
+      }
+      if (effects.woodPerTick) {
+        this.city!.resources.wood = Math.min(
+          this.city!.resources.wood + (effects.woodPerTick * workerRatio * building.level),
+          this.city!.storage.wood
+        );
+      }
+      if (effects.stonePerTick) {
+        this.city!.resources.stone = Math.min(
+          this.city!.resources.stone + (effects.stonePerTick * workerRatio * building.level),
+          this.city!.storage.stone
+        );
+      }
+    });
+  }
+
   // Worker management
   assignWorker(buildingId: string): boolean {
     if (!this.city) return false;
