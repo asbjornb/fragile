@@ -11,6 +11,7 @@ export class Game {
   private inputSystem: InputSystem;
   private settleButton: HTMLButtonElement | null = null;
   private managementBar: HTMLDivElement | null = null;
+  private leftSidebar: HTMLDivElement | null = null;
   private gameTickInterval: number | null = null;
 
   constructor(container: HTMLElement) {
@@ -101,6 +102,7 @@ export class Game {
     this.renderer.animateZoom(2.0, 1000, () => {
       this.renderer.renderCity(city);
       this.updateUI();
+      this.setupLeftSidebar();
       this.setupCityManagement();
       this.startGameTick();
     });
@@ -124,117 +126,135 @@ export class Game {
     }
   }
 
+  private setupLeftSidebar() {
+    if (this.leftSidebar) return; // Already exists
+    
+    const city = this.citySystem.getCity();
+    if (!city) return;
+
+    // Create left sidebar for buildings and worker management
+    this.leftSidebar = document.createElement('div');
+    this.leftSidebar.style.position = 'fixed';
+    this.leftSidebar.style.left = '0';
+    this.leftSidebar.style.top = '0';
+    this.leftSidebar.style.bottom = '0';
+    this.leftSidebar.style.width = '300px';
+    this.leftSidebar.style.backgroundColor = '#2c3e50';
+    this.leftSidebar.style.borderRight = '2px solid #34495e';
+    this.leftSidebar.style.zIndex = '1000';
+    this.leftSidebar.style.overflowY = 'auto';
+    this.leftSidebar.style.padding = '15px';
+    this.leftSidebar.style.boxShadow = '2px 0 10px rgba(0,0,0,0.3)';
+    this.leftSidebar.style.color = 'white';
+
+    this.updateLeftSidebar();
+    document.body.appendChild(this.leftSidebar);
+    
+    // Add event listeners for worker assignment buttons
+    this.setupWorkerButtons();
+  }
+
+  private updateLeftSidebar() {
+    if (!this.leftSidebar) return;
+    
+    const city = this.citySystem.getCity();
+    if (!city) return;
+
+    const buildingsList = city.buildings.filter(b => b.type !== 'town_hall').map(building => {
+      const buildingType = this.citySystem.getBuildingTypes().find(bt => bt.id === building.type);
+      
+      if (building.maxWorkers > 0) {
+        // Building that can have workers - show +/- buttons
+        return `<div style="font-size: 14px; margin: 6px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-weight: 500;">${buildingType?.icon || '🏗️'} ${building.name}</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button class="worker-btn" data-action="unassign" data-building="${building.id}" 
+                    style="width: 24px; height: 24px; font-size: 14px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                    ${building.assignedWorkers === 0 ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>-</button>
+            <span style="min-width: 40px; text-align: center; font-weight: bold; font-size: 14px;">${building.assignedWorkers}/${building.maxWorkers}👷</span>
+            <button class="worker-btn" data-action="assign" data-building="${building.id}"
+                    style="width: 24px; height: 24px; font-size: 14px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                    ${(building.assignedWorkers >= building.maxWorkers || city.availableWorkers === 0) ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>+</button>
+          </div>
+        </div>`;
+      } else {
+        // Building that doesn't use workers
+        return `<div style="font-size: 14px; margin: 6px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+          <span style="font-weight: 500;">${buildingType?.icon || '🏗️'} ${building.name}</span>
+        </div>`;
+      }
+    }).join('');
+    
+    this.leftSidebar.innerHTML = `
+      <h2 style="margin: 0 0 15px 0; font-size: 20px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">${city.name}</h2>
+      
+      <div style="margin-bottom: 20px; padding: 10px; background: #34495e; border-radius: 6px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px;">📊 City Status</h3>
+        <div style="font-size: 14px;">
+          <div style="margin: 4px 0;">Population: <span style="color: #f39c12; font-weight: bold;">${city.population}/${city.maxPopulation}</span></div>
+          <div style="margin: 4px 0;">Available Workers: <span style="color: #2ecc71; font-weight: bold;">${city.availableWorkers}</span></div>
+          <div style="margin: 4px 0;">Integrity: <span style="color: #e74c3c; font-weight: bold;">${city.integrity}</span></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px; padding: 10px; background: #34495e; border-radius: 6px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px;">💰 Resources</h3>
+        <div style="font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span></div>
+          <div>Wood: <span style="color: #8b4513; font-weight: bold;">${city.resources.wood}/${city.storage.wood}</span></div>
+          <div>Stone: <span style="color: #95a5a6; font-weight: bold;">${city.resources.stone}/${city.storage.stone}</span></div>
+          <div>Research: <span style="color: #9b59b6; font-weight: bold;">${city.resources.research}</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="margin: 0; font-size: 16px;">🏘️ Buildings</h3>
+          <button id="unassign-all" style="padding: 6px 12px; font-size: 12px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer;">Unassign All</button>
+        </div>
+        <div style="max-height: calc(100vh - 400px); overflow-y: auto;">
+          ${buildingsList || '<div style="font-size: 14px; color: #7f8c8d; text-align: center; padding: 30px;">No buildings yet</div>'}
+        </div>
+      </div>
+    `;
+  }
+
   private setupCityManagement() {
     if (this.managementBar) return; // Already exists
     
     const city = this.citySystem.getCity();
     if (!city) return;
 
-    // Create bottom management bar
+    // Create simplified bottom management bar for construction only
     this.managementBar = document.createElement('div');
     this.managementBar.style.position = 'fixed';
     this.managementBar.style.bottom = '0';
-    this.managementBar.style.left = '0';
+    this.managementBar.style.left = '300px'; // Account for left sidebar
     this.managementBar.style.right = '0';
-    this.managementBar.style.height = '120px';
+    this.managementBar.style.height = '80px';
     this.managementBar.style.backgroundColor = '#2c3e50';
     this.managementBar.style.borderTop = '2px solid #34495e';
     this.managementBar.style.display = 'flex';
     this.managementBar.style.alignItems = 'center';
-    this.managementBar.style.padding = '10px 20px';
+    this.managementBar.style.padding = '15px';
+    this.managementBar.style.gap = '10px';
     this.managementBar.style.zIndex = '1000';
     this.managementBar.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.3)';
 
-    // City info section
-    const cityInfo = document.createElement('div');
-    cityInfo.style.color = 'white';
-    cityInfo.style.marginRight = '30px';
-    cityInfo.style.minWidth = '200px';
-    cityInfo.innerHTML = `
-      <h3 style="margin: 0 0 5px 0; font-size: 18px;">${city.name}</h3>
-      <div style="font-size: 14px;">
-        <div>Population: <span style="color: #f39c12;">${city.population}</span></div>
-        <div>Integrity: <span style="color: #e74c3c;">${city.integrity}</span></div>
-        <div>Buildings: <span style="color: #3498db;">${city.buildings.length}</span></div>
-      </div>
-    `;
-
-    // Resources section
-    const resourcesDiv = document.createElement('div');
-    resourcesDiv.style.color = 'white';
-    resourcesDiv.style.marginRight = '20px';
-    resourcesDiv.style.minWidth = '180px';
-    resourcesDiv.innerHTML = `
-      <h4 style="margin: 0 0 5px 0; font-size: 16px;">Resources</h4>
-      <div style="font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px;">
-        <div>Food: <span style="color: #2ecc71;">${city.resources.food}/${city.storage.food}</span></div>
-        <div>Wood: <span style="color: #8b4513;">${city.resources.wood}/${city.storage.wood}</span></div>
-        <div>Stone: <span style="color: #95a5a6;">${city.resources.stone}/${city.storage.stone}</span></div>
-        <div>Workers: <span style="color: #f39c12;">${city.availableWorkers}/${city.population}</span></div>
-      </div>
-    `;
-
-    // Buildings section (left side)
-    const buildingsDiv = document.createElement('div');
-    buildingsDiv.style.color = 'white';
-    buildingsDiv.style.marginRight = '20px';
-    buildingsDiv.style.minWidth = '250px';
-    buildingsDiv.style.maxHeight = '100px';
-    buildingsDiv.style.overflowY = 'auto';
-    
-    const buildingsList = city.buildings.filter(b => b.type !== 'town_hall').map(building => {
-      const buildingType = this.citySystem.getBuildingTypes().find(bt => bt.id === building.type);
-      
-      if (building.maxWorkers > 0) {
-        // Building that can have workers - show +/- buttons
-        return `<div style="font-size: 12px; margin: 2px 0; padding: 2px 4px; background: rgba(255,255,255,0.1); border-radius: 3px; display: flex; align-items: center; justify-content: space-between;">
-          <span>${buildingType?.icon || '🏗️'} ${building.name}</span>
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <button class="worker-btn" data-action="unassign" data-building="${building.id}" 
-                    style="width: 16px; height: 16px; font-size: 10px; background: #e74c3c; color: white; border: none; border-radius: 2px; cursor: pointer;"
-                    ${building.assignedWorkers === 0 ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>-</button>
-            <span style="min-width: 30px; text-align: center;">${building.assignedWorkers}/${building.maxWorkers}👷</span>
-            <button class="worker-btn" data-action="assign" data-building="${building.id}"
-                    style="width: 16px; height: 16px; font-size: 10px; background: #27ae60; color: white; border: none; border-radius: 2px; cursor: pointer;"
-                    ${(building.assignedWorkers >= building.maxWorkers || city.availableWorkers === 0) ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>+</button>
-          </div>
-        </div>`;
-      } else {
-        // Building that doesn't use workers
-        return `<div style="font-size: 12px; margin: 2px 0; padding: 2px 4px; background: rgba(255,255,255,0.1); border-radius: 3px;">
-          ${buildingType?.icon || '🏗️'} ${building.name}
-        </div>`;
-      }
-    }).join('');
-    
-    buildingsDiv.innerHTML = `
-      <h4 style="margin: 0 0 5px 0; font-size: 16px;">Buildings (${city.buildings.length - 1})
-        <button id="unassign-all" style="margin-left: 10px; padding: 2px 6px; font-size: 10px; background: #e67e22; color: white; border: none; border-radius: 3px; cursor: pointer;">Unassign All</button>
-      </h4>
-      <div style="max-height: 60px; overflow-y: auto;">
-        ${buildingsList || '<div style="font-size: 12px; color: #7f8c8d;">No buildings yet</div>'}
-      </div>
-    `;
-
-    // Build options section (right side)
-    const buildOptionsDiv = document.createElement('div');
-    buildOptionsDiv.style.marginLeft = 'auto';
-    buildOptionsDiv.style.color = 'white';
-    buildOptionsDiv.style.minWidth = '300px';
-    
     const availableBuildings = this.citySystem.getBuildingTypes();
     const buildButtons = availableBuildings.map(buildingType => {
       const canBuild = this.citySystem.canBuildBuilding(buildingType.id);
       const button = document.createElement('button');
       button.textContent = `${buildingType.icon} ${buildingType.name}`;
-      button.style.padding = '4px 8px';
-      button.style.margin = '1px';
-      button.style.fontSize = '11px';
+      button.style.padding = '8px 16px';
+      button.style.fontSize = '14px';
       button.style.border = 'none';
-      button.style.borderRadius = '3px';
+      button.style.borderRadius = '6px';
       button.style.cursor = canBuild.canBuild ? 'pointer' : 'not-allowed';
       button.style.backgroundColor = canBuild.canBuild ? '#27ae60' : '#7f8c8d';
       button.style.color = canBuild.canBuild ? 'white' : '#bdc3c7';
+      button.style.fontWeight = '600';
+      button.style.minWidth = '120px';
       
       if (!canBuild.canBuild) {
         button.title = canBuild.reason || 'Cannot build';
@@ -250,23 +270,18 @@ export class Game {
       return button;
     });
 
-    buildOptionsDiv.innerHTML = `<h4 style="margin: 0 0 5px 0; font-size: 16px;">Build</h4>`;
-    const buttonContainer = document.createElement('div');
-    buttonContainer.style.display = 'flex';
-    buttonContainer.style.flexWrap = 'wrap';
-    buttonContainer.style.gap = '2px';
-    buildButtons.forEach(button => buttonContainer.appendChild(button));
-    buildOptionsDiv.appendChild(buttonContainer);
+    // Add construction header
+    const headerDiv = document.createElement('div');
+    headerDiv.style.color = 'white';
+    headerDiv.style.fontSize = '18px';
+    headerDiv.style.fontWeight = '600';
+    headerDiv.style.marginRight = '20px';
+    headerDiv.textContent = '🔨 Build:';
 
-    this.managementBar.appendChild(cityInfo);
-    this.managementBar.appendChild(resourcesDiv);
-    this.managementBar.appendChild(buildingsDiv);
-    this.managementBar.appendChild(buildOptionsDiv);
+    this.managementBar.appendChild(headerDiv);
+    buildButtons.forEach(button => this.managementBar!.appendChild(button));
 
     document.body.appendChild(this.managementBar);
-    
-    // Add event listeners for worker assignment buttons
-    this.setupWorkerButtons();
   }
 
   private buildBuilding(buildingTypeId: string) {
@@ -281,10 +296,10 @@ export class Game {
   }
 
   private setupWorkerButtons() {
-    if (!this.managementBar) return;
+    if (!this.leftSidebar) return;
     
     // Worker assignment buttons
-    const workerButtons = this.managementBar.querySelectorAll('.worker-btn');
+    const workerButtons = this.leftSidebar.querySelectorAll('.worker-btn');
     workerButtons.forEach(button => {
       button.addEventListener('click', (e) => {
         const target = e.target as HTMLButtonElement;
@@ -310,7 +325,7 @@ export class Game {
     });
 
     // Unassign all button
-    const unassignAllBtn = this.managementBar.querySelector('#unassign-all');
+    const unassignAllBtn = this.leftSidebar.querySelector('#unassign-all');
     if (unassignAllBtn) {
       unassignAllBtn.addEventListener('click', () => {
         this.citySystem.unassignAllWorkers();
@@ -322,8 +337,12 @@ export class Game {
   }
 
   private refreshManagementBar() {
+    // Update left sidebar
+    this.updateLeftSidebar();
+    this.setupWorkerButtons();
+    
+    // Refresh bottom bar
     if (this.managementBar) {
-      // Remove and recreate the management bar with updated info
       document.body.removeChild(this.managementBar);
       this.managementBar = null;
       this.setupCityManagement();
@@ -367,6 +386,12 @@ export class Game {
     if (this.managementBar) {
       document.body.removeChild(this.managementBar);
       this.managementBar = null;
+    }
+    
+    // Clean up left sidebar
+    if (this.leftSidebar) {
+      document.body.removeChild(this.leftSidebar);
+      this.leftSidebar = null;
     }
   }
 }
