@@ -43,10 +43,14 @@ export interface BuildingType {
   id: string;
   name: string;
   description: string;
-  cost: {
+  baseCost: {
     wood?: number;
     stone?: number;
     food?: number;
+  };
+  pricing: {
+    scalingFactor: number;
+    scalingType: 'exponential' | 'linear' | 'fixed';
   };
   effects: {
     populationCapacity?: number;
@@ -136,14 +140,53 @@ export class CitySystem {
     return Array.from(this.buildingTypes.values());
   }
 
+  // Calculate current cost for a building type based on how many have been built
+  getCurrentBuildingCost(buildingTypeId: string): { wood?: number; stone?: number; food?: number } {
+    if (!this.city) return {};
+    
+    const buildingType = this.buildingTypes.get(buildingTypeId);
+    if (!buildingType) return {};
+
+    // Count how many of this building type exist
+    const existingCount = this.city.buildings.filter(b => b.type === buildingTypeId).length;
+    
+    const scaledCost: { wood?: number; stone?: number; food?: number } = {};
+    
+    for (const [resource, baseCost] of Object.entries(buildingType.baseCost)) {
+      if (baseCost !== undefined) {
+        let currentCost: number;
+        
+        switch (buildingType.pricing.scalingType) {
+          case 'exponential':
+            currentCost = Math.ceil(baseCost * Math.pow(buildingType.pricing.scalingFactor, existingCount));
+            break;
+          case 'linear':
+            currentCost = Math.ceil(baseCost * (1 + (buildingType.pricing.scalingFactor - 1) * existingCount));
+            break;
+          case 'fixed':
+          default:
+            currentCost = baseCost;
+            break;
+        }
+        
+        scaledCost[resource as keyof typeof scaledCost] = currentCost;
+      }
+    }
+    
+    return scaledCost;
+  }
+
   canBuildBuilding(buildingTypeId: string): { canBuild: boolean; reason?: string } {
     if (!this.city) return { canBuild: false, reason: 'No city' };
     
     const buildingType = this.buildingTypes.get(buildingTypeId);
     if (!buildingType) return { canBuild: false, reason: 'Unknown building type' };
 
+    // Get current scaled cost
+    const currentCost = this.getCurrentBuildingCost(buildingTypeId);
+
     // Check resource costs
-    for (const [resource, cost] of Object.entries(buildingType.cost)) {
+    for (const [resource, cost] of Object.entries(currentCost)) {
       if (this.city.resources[resource as keyof City['resources']] < (cost || 0)) {
         return { canBuild: false, reason: `Not enough ${resource}` };
       }
@@ -163,8 +206,9 @@ export class CitySystem {
       return { success: false, error: canBuild.reason };
     }
 
-    // Spend resources
-    for (const [resource, cost] of Object.entries(buildingType.cost)) {
+    // Get current scaled cost and spend resources
+    const currentCost = this.getCurrentBuildingCost(buildingTypeId);
+    for (const [resource, cost] of Object.entries(currentCost)) {
       this.city.resources[resource as keyof City['resources']] -= (cost || 0);
     }
 

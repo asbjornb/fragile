@@ -277,7 +277,8 @@ export class Game {
         button.title = canBuild.reason || 'Cannot build';
         button.disabled = true;
       } else {
-        const costText = Object.entries(buildingType.cost)
+        const currentCost = this.citySystem.getCurrentBuildingCost(buildingType.id);
+        const costText = Object.entries(currentCost)
           .map(([resource, amount]) => `${amount} ${resource}`)
           .join(', ');
         button.title = `${buildingType.description}\nCost: ${costText}`;

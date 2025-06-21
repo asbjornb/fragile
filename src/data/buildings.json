@@ -4,9 +4,13 @@
       "id": "hut",
       "name": "Hut",
       "description": "Basic housing for growing population",
-      "cost": {
+      "baseCost": {
         "wood": 8,
         "food": 2
+      },
+      "pricing": {
+        "scalingFactor": 1.10,
+        "scalingType": "exponential"
       },
       "effects": {
         "populationCapacity": 2
@@ -19,9 +23,13 @@
       "id": "farm",
       "name": "Farm",
       "description": "Produces food with 1 worker assigned",
-      "cost": {
+      "baseCost": {
         "wood": 5,
         "stone": 2
+      },
+      "pricing": {
+        "scalingFactor": 1.15,
+        "scalingType": "exponential"
       },
       "effects": {
         "foodPerTick": 3
@@ -36,8 +44,12 @@
       "id": "shed",
       "name": "Shed",
       "description": "Increases wood storage capacity",
-      "cost": {
+      "baseCost": {
         "wood": 10
+      },
+      "pricing": {
+        "scalingFactor": 1.08,
+        "scalingType": "exponential"
       },
       "effects": {
         "woodStorage": 25
@@ -50,9 +62,13 @@
       "id": "lumber_yard",
       "name": "Lumber Yard",
       "description": "Produces wood with 1 worker assigned",
-      "cost": {
+      "baseCost": {
         "wood": 6,
         "stone": 4
+      },
+      "pricing": {
+        "scalingFactor": 1.12,
+        "scalingType": "exponential"
       },
       "effects": {
         "woodPerTick": 2
@@ -67,9 +83,13 @@
       "id": "quarry",
       "name": "Quarry",
       "description": "Produces stone with 1 worker assigned",
-      "cost": {
+      "baseCost": {
         "wood": 8,
         "food": 3
+      },
+      "pricing": {
+        "scalingFactor": 1.20,
+        "scalingType": "exponential"
       },
       "effects": {
         "stonePerTick": 2
