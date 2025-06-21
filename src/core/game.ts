@@ -185,13 +185,11 @@ export class Game {
           </div>
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-size: 12px; color: #95a5a6;">Workers: ${data.totalWorkers}/${data.maxWorkers}</span>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <button class="worker-btn" data-action="unassign" data-building-type="${buildingTypeId}" 
-                      style="width: 22px; height: 22px; font-size: 12px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer;"
-                      ${data.totalWorkers === 0 ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>-</button>
-              <button class="worker-btn" data-action="assign" data-building-type="${buildingTypeId}"
-                      style="width: 22px; height: 22px; font-size: 12px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer;"
-                      ${(data.totalWorkers >= data.maxWorkers || city.availableWorkers === 0) ? 'disabled style="background: #7f8c8d; cursor: not-allowed;"' : ''}>+</button>
+            <div style="display: flex; align-items: center; gap: 6px; min-width: 50px; justify-content: flex-end;">
+              ${data.totalWorkers > 0 ? `<button class="worker-btn" data-action="unassign" data-building-type="${buildingTypeId}" 
+                      style="width: 22px; height: 22px; font-size: 12px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer;">-</button>` : ''}
+              ${(data.totalWorkers < data.maxWorkers && city.availableWorkers > 0) ? `<button class="worker-btn" data-action="assign" data-building-type="${buildingTypeId}"
+                      style="width: 22px; height: 22px; font-size: 12px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer;">+</button>` : ''}
             </div>
           </div>
         </div>`;
