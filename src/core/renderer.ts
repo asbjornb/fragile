@@ -169,6 +169,36 @@ export class HexRenderer {
     });
   }
 
+  private renderCityVisibleArea(centerHex: HexCoordinate, cityRadius: number) {
+    const renderedHexes = new Set<string>();
+    
+    // Only render hexes within the strict city radius
+    for (let q = centerHex.q - cityRadius; q <= centerHex.q + cityRadius; q++) {
+      for (let r = centerHex.r - cityRadius; r <= centerHex.r + cityRadius; r++) {
+        const hex = { q, r };
+        const distance = HexUtils.hexDistance(centerHex, hex);
+        
+        if (distance <= cityRadius) {
+          const key = `${hex.q},${hex.r}`;
+          
+          if (!this.hexGraphics.has(key)) {
+            const color = this.getHexColor(hex);
+            this.renderHex(hex, color);
+          }
+          renderedHexes.add(key);
+        }
+      }
+    }
+
+    // Remove ALL hexes that are outside the city radius
+    this.hexGraphics.forEach((graphics, key) => {
+      if (!renderedHexes.has(key)) {
+        this.hexContainer.removeChild(graphics);
+        this.hexGraphics.delete(key);
+      }
+    });
+  }
+
   private getHexColor(hex: HexCoordinate): number {
     if (!this.visibilitySystem.isExplored(hex)) {
       return 0x0a0a0a; // Unexplored - very dark gray (fog of war)
@@ -642,8 +672,9 @@ export class HexRenderer {
     // Center camera on city
     this.centerCameraOnHex(city.position);
     
-    // Render visible area around city, hiding unexplored tiles for focused city view
-    this.renderVisibleArea(city.position, true);
+    // Update city visibility system and render only 2-hex radius around city
+    this.visibilitySystem.updateVisibility(city.position, 2);
+    this.renderCityVisibleArea(city.position, 2);
     
     if (this.cityGraphics) {
       this.hexContainer.removeChild(this.cityGraphics);
