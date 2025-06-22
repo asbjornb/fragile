@@ -14,4 +14,6 @@ The full game specification is in [SPEC.md](./SPEC.md).
 
 ## General instructions
 
+If in doubt consider checking the docs at [SPEC.md](./SPEC.md), [README.md](./README.md), [TODO.md](./TODO.md), [tech-snapshot.md](./tech-snapshot.md).
+
 After each change update relevant docs [SPEC.md](./SPEC.md), [README.md](./README.md), [TODO.md](./TODO.md), [tech-snapshot.md](./tech-snapshot.md)
