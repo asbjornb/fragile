@@ -18,6 +18,7 @@
 - ✅ Clean up UI duplication between top bar and left sidebar
 - ✅ Include city center tile in terrain bonuses and make radius extensible
 - ✅ Remove broken resource node rendering (will implement properly later)
+- ✅ Fixed terrain generation - sorted tile types for correct weighted selection
 
 ## In Progress / Pending
 

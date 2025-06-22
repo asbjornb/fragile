@@ -44,28 +44,48 @@ export class WorldGenerator {
   }
 
   private seededRandom(hex: HexCoordinate): number {
-    // Simple seeded random based on position and global seed
+    // Better seeded random using multiple hash functions
     const x = hex.q;
     const y = hex.r;
     const seed = this.seed;
     
-    let hash = ((x * 73856093) ^ (y * 19349663) ^ (seed * 83492791)) >>> 0;
-    hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-    hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
-    hash = (hash >> 16) ^ hash;
+    // Use multiple mixing functions for better distribution
+    let a = (x * 1664525 + y * 1013904223 + seed) >>> 0;
+    a = (a ^ (a >>> 16)) * 0x85ebca6b;
+    a = (a ^ (a >>> 13)) * 0xc2b2ae35;
+    a = a ^ (a >>> 16);
     
-    return (hash >>> 0) / 4294967296;
+    let b = (y * 22695477 + x * 1366128477 + seed * 2654435761) >>> 0;
+    b = (b ^ (b >>> 16)) * 0x45d9f3b;
+    b = (b ^ (b >>> 16)) * 0x45d9f3b;
+    b = b ^ (b >>> 16);
+    
+    // Combine the two hashes
+    const combined = (a ^ b) >>> 0;
+    
+    return combined / 4294967296;
   }
 
   private selectTileType(hex: HexCoordinate): TileType {
     const random = this.seededRandom(hex);
-    const totalWeight = Array.from(this.tileTypes.values()).reduce((sum, type) => sum + type.weight, 0);
+    
+    // Sort tile types by weight (highest first) for consistent selection
+    const sortedTileTypes = Array.from(this.tileTypes.values()).sort((a, b) => b.weight - a.weight);
+    const totalWeight = sortedTileTypes.reduce((sum, type) => sum + type.weight, 0);
     
     let currentWeight = 0;
     const targetWeight = random * totalWeight;
     
-    for (const tileType of this.tileTypes.values()) {
+    // Debug: Log selection process for a few tiles
+    if (Math.abs(hex.q) <= 1 && Math.abs(hex.r) <= 1) {
+      console.log(`Tile (${hex.q}, ${hex.r}): random=${random.toFixed(3)}, target=${targetWeight.toFixed(1)}, total=${totalWeight}`);
+    }
+    
+    for (const tileType of sortedTileTypes) {
       currentWeight += tileType.weight;
+      if (Math.abs(hex.q) <= 1 && Math.abs(hex.r) <= 1) {
+        console.log(`  ${tileType.name}: weight=${tileType.weight}, cumulative=${currentWeight}, selected=${currentWeight >= targetWeight}`);
+      }
       if (currentWeight >= targetWeight) {
         return tileType;
       }
@@ -106,6 +126,11 @@ export class WorldGenerator {
     
     const tileType = this.selectTileType(hex);
     const { hasResource, resourceType } = this.hasResource(hex, tileType);
+    
+    // Debug: Log tile generation for a small area around origin
+    if (Math.abs(hex.q) <= 3 && Math.abs(hex.r) <= 3) {
+      console.log(`Generated ${tileType.name} at (${hex.q}, ${hex.r})`);
+    }
     
     const tile: Tile = {
       coordinate: hex,
