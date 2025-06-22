@@ -13,7 +13,7 @@
 - **City founding mechanics** with transition from exploration to city management
 - **Building system** with 5 building types (hut, farm, shed, lumber_yard, quarry)
 - **Progressive building unlocks** - shed unlocks when wood storage is first maxed
-- **Terrain-based production bonuses** - buildings gain efficiency from adjacent terrain
+- **Terrain-based production bonuses** - buildings gain efficiency from terrain within radius (includes city center)
 - **Interactive terrain legend** - shows terrain types and bonuses during exploration phase
 - **Clean UI organization** - exploration shows food counter, city mode hides top bar and uses organized left sidebar
 - **Worker assignment** and resource production systems

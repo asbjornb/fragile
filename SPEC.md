@@ -65,10 +65,11 @@
 **Building Mechanics:**
 - **Scaling Costs:** Each building type uses exponential cost scaling with unique factors
 - **Progressive Unlocks:** Buildings unlock based on gameplay conditions (e.g., shed unlocks when wood storage is first maxed)
-- **Terrain-Based Production:** Production buildings gain bonuses from adjacent terrain (base 1/worker/tick)
-  - Farms: +5% food per adjacent plains tile
-  - Lumber Yards: +10% wood per adjacent forest tile  
-  - Quarries: +20% stone per adjacent hill tile
+- **Terrain-Based Production:** Production buildings gain bonuses from nearby terrain within radius (base 1/worker/tick)
+  - Farms: +5% food per plains tile (includes city center + adjacent)
+  - Lumber Yards: +10% wood per forest tile (includes city center + adjacent)
+  - Quarries: +20% stone per hill/mountain tile (includes city center + adjacent)
+  - Radius: 1 (7 tiles total: center + 6 adjacent), expandable via future tech/buildings
 - **Max Levels:** Most buildings cap at level 3-5 for balance
 - **Worker Requirements:** Production buildings (Farm, Lumber Yard, Quarry) require assigned workers
 - **Terrain Requirements:** Some buildings require specific adjacent terrain types

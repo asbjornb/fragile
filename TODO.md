@@ -16,6 +16,7 @@
 - ✅ Implement terrain legend with production bonuses
 - ✅ Add terrain bonus display to city UI (moved to left sidebar Resources pane)
 - ✅ Clean up UI duplication between top bar and left sidebar
+- ✅ Include city center tile in terrain bonuses and make radius extensible
 
 ## In Progress / Pending
 

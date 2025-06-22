@@ -155,12 +155,39 @@ export class Game {
     this.setupWorkerButtons();
   }
 
+  private getTerrainBonusRadius(): number {
+    // Base radius of 1 (adjacent tiles + center)
+    // This can be extended later by tech/buildings
+    return 1;
+  }
+
   private getTerrainBonuses(cityPosition: HexCoordinate): { food: number; wood: number; stone: number } {
-    const neighbors = HexUtils.hexNeighbors(cityPosition);
+    const radius = this.getTerrainBonusRadius();
     let bonuses = { food: 0, wood: 0, stone: 0 };
 
-    neighbors.forEach((neighborCoord: HexCoordinate) => {
-      const tile = this.renderer.getWorldGenerator().getTile(neighborCoord);
+    // Get all hexes within radius (including center tile)
+    const hexesToCheck: HexCoordinate[] = [];
+    
+    // Add center tile (the city tile itself)
+    hexesToCheck.push(cityPosition);
+    
+    // Add tiles within radius
+    for (let q = -radius; q <= radius; q++) {
+      for (let r = Math.max(-radius, -q - radius); r <= Math.min(radius, -q + radius); r++) {
+        const hex = { q: cityPosition.q + q, r: cityPosition.r + r };
+        
+        // Skip center tile (already added)
+        if (hex.q === cityPosition.q && hex.r === cityPosition.r) continue;
+        
+        // Only include if within actual radius
+        if (HexUtils.hexDistance(cityPosition, hex) <= radius) {
+          hexesToCheck.push(hex);
+        }
+      }
+    }
+
+    hexesToCheck.forEach((coord: HexCoordinate) => {
+      const tile = this.renderer.getWorldGenerator().getTile(coord);
       if (!tile) return;
 
       switch (tile.type.id) {

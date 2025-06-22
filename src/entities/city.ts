@@ -169,15 +169,41 @@ export class CitySystem {
     }
   }
 
+  private getTerrainBonusRadius(): number {
+    // Base radius of 1 (adjacent tiles + center)
+    // This can be extended later by tech/buildings
+    return 1;
+  }
+
   private getTerrainBonus(buildingType: string): number {
     if (!this.city) return 0;
 
-    // Get adjacent hexes around the city
-    const neighbors = HexUtils.hexNeighbors(this.city.position);
+    const radius = this.getTerrainBonusRadius();
     let bonusMultiplier = 0;
 
-    neighbors.forEach((neighborCoord: HexCoordinate) => {
-      const tile = this.worldGenerator.getTile(neighborCoord);
+    // Get all hexes within radius (including center tile)
+    const hexesToCheck: HexCoordinate[] = [];
+    
+    // Add center tile (the city tile itself)
+    hexesToCheck.push(this.city.position);
+    
+    // Add tiles within radius
+    for (let q = -radius; q <= radius; q++) {
+      for (let r = Math.max(-radius, -q - radius); r <= Math.min(radius, -q + radius); r++) {
+        const hex = { q: this.city.position.q + q, r: this.city.position.r + r };
+        
+        // Skip center tile (already added)
+        if (hex.q === this.city.position.q && hex.r === this.city.position.r) continue;
+        
+        // Only include if within actual radius
+        if (HexUtils.hexDistance(this.city.position, hex) <= radius) {
+          hexesToCheck.push(hex);
+        }
+      }
+    }
+
+    hexesToCheck.forEach((coord: HexCoordinate) => {
+      const tile = this.worldGenerator.getTile(coord);
       if (!tile) return;
 
       // Apply terrain bonuses based on building type
@@ -188,8 +214,8 @@ export class CitySystem {
           }
           break;
         case 'quarry':
-          if (tile.type.id === 'hill') {
-            bonusMultiplier += 0.20; // +20% per hill tile
+          if (tile.type.id === 'hill' || tile.type.id === 'mountain') {
+            bonusMultiplier += 0.20; // +20% per hill/mountain tile
           }
           break;
         case 'farm':
