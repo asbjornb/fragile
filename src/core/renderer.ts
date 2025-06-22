@@ -608,53 +608,50 @@ export class HexRenderer {
   private drawCitySprite(graphics: PIXI.Graphics, x: number, y: number, city: City) {
     const size = HexUtils.HEX_SIZE * 0.6;
     
-    // City base (larger circle)
-    graphics.beginFill(0x8B4513); // Brown base
+    // City walls (circular base with stone texture effect)
+    graphics.beginFill(0x696969); // Dark gray stone
+    graphics.lineStyle(2, 0x2F2F2F, 1); // Darker outline
     graphics.drawCircle(x, y, size);
     graphics.endFill();
     
-    // Town hall building (central structure)
-    graphics.beginFill(0x654321); // Darker brown
-    graphics.drawRect(x - size * 0.5, y - size * 0.5, size, size * 0.8);
+    // Main keep/castle tower (central structure)
+    const towerWidth = size * 0.7;
+    const towerHeight = size * 1.2;
+    graphics.beginFill(0xA0A0A0); // Light gray stone
+    graphics.lineStyle(1, 0x2F2F2F, 1);
+    graphics.drawRect(x - towerWidth/2, y - towerHeight/2, towerWidth, towerHeight);
     graphics.endFill();
     
-    // Roof (triangle)
-    graphics.beginFill(0x8B0000); // Dark red roof
-    graphics.drawPolygon([
-      x - size * 0.6, y - size * 0.5,
-      x, y - size * 0.9,
-      x + size * 0.6, y - size * 0.5
-    ]);
-    graphics.endFill();
-    
-    // Small houses around the perimeter based on population
-    const houseCount = Math.min(city.population, 6);
-    for (let i = 0; i < houseCount; i++) {
-      const angle = (Math.PI * 2 * i) / 6;
-      const houseX = x + Math.cos(angle) * size * 0.8;
-      const houseY = y + Math.sin(angle) * size * 0.8;
-      
-      // Small house
-      graphics.beginFill(0x8B7355); // Tan color
-      graphics.drawRect(houseX - 4, houseY - 4, 8, 8);
-      graphics.endFill();
-      
-      // House roof
-      graphics.beginFill(0x8B0000);
-      graphics.drawPolygon([
-        houseX - 5, houseY - 4,
-        houseX, houseY - 8,
-        houseX + 5, houseY - 4
-      ]);
+    // Battlements on top of main tower
+    for (let i = 0; i < 4; i++) {
+      const battlementX = x - towerWidth/2 + (i * towerWidth/3);
+      graphics.beginFill(0xA0A0A0);
+      graphics.drawRect(battlementX, y - towerHeight/2 - 4, towerWidth/6, 8);
       graphics.endFill();
     }
     
-    // City flag/banner on top
-    graphics.beginFill(0x4169E1); // Blue flag
-    graphics.drawRect(x - 2, y - size * 0.9, 4, 8);
+    // Side towers based on city development
+    if (city.population >= 3) {
+      // Left tower
+      graphics.beginFill(0x808080);
+      graphics.drawRect(x - size * 0.9, y - size * 0.4, size * 0.3, size * 0.8);
+      graphics.endFill();
+      
+      // Right tower  
+      graphics.beginFill(0x808080);
+      graphics.drawRect(x + size * 0.6, y - size * 0.4, size * 0.3, size * 0.8);
+      graphics.endFill();
+    }
+    
+    // City banner/flag on tallest point
+    graphics.beginFill(0x4A90E2); // Royal blue
+    graphics.drawRect(x + 2, y - towerHeight/2 - 8, 8, 6);
     graphics.endFill();
-    graphics.drawRect(x + 2, y - size * 0.9, 6, 4);
-    graphics.endFill();
+    
+    // Flag pole
+    graphics.lineStyle(2, 0x8B4513, 1); // Brown pole
+    graphics.moveTo(x, y - towerHeight/2);
+    graphics.lineTo(x, y - towerHeight/2 - 12);
     
     // City name text (will be handled by UI layer in future)
     // For now, just a visual marker
