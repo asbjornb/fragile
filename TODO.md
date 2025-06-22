@@ -23,6 +23,7 @@
 - ⏳ Build basic UI overlay with resource display
 - ⏳ Implement save/load system with localStorage
 - ⏳ Update spec with decisions made
+- ⏳ Add story / events
 
 ### Medium Priority
 - ⏳ Add dynamic events (bandit raids, harsh winters)
