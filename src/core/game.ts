@@ -3,21 +3,25 @@ import { HexRenderer } from './renderer';
 import { SettlerSystem } from '../entities/settler';
 import { CitySystem } from '../entities/city';
 import { InputSystem } from '../systems/input';
+import { StorySystem } from '../systems/events';
 
 export class Game {
   private renderer: HexRenderer;
   private settlerSystem: SettlerSystem;
   private citySystem: CitySystem;
   private inputSystem: InputSystem;
+  private storySystem: StorySystem;
   private settleButton: HTMLButtonElement | null = null;
   private managementBar: HTMLDivElement | null = null;
   private leftSidebar: HTMLDivElement | null = null;
+  private storyPanel: HTMLDivElement | null = null;
   private gameTickInterval: number | null = null;
 
   constructor(container: HTMLElement) {
     this.renderer = new HexRenderer(container);
     this.settlerSystem = new SettlerSystem();
     this.citySystem = new CitySystem(this.renderer.getWorldGenerator());
+    this.storySystem = new StorySystem();
     this.inputSystem = new InputSystem(
       this.renderer.getCanvas(),
       () => this.renderer.getCameraOffset()
@@ -25,6 +29,7 @@ export class Game {
 
     this.setupUI(container);
     this.setupInputHandling();
+    this.setupStorySystem();
     this.render();
   }
 
@@ -98,12 +103,16 @@ export class Game {
     
     const city = this.citySystem.foundCity(settler.position, settler.food);
     
+    // Trigger story message for city founding
+    this.storySystem.cityFounded();
+    
     // Animate zoom in to city view and then render city
     this.renderer.animateZoom(2.0, 1000, () => {
       this.render(); // Use render method instead of renderCity directly
       this.updateUI();
       this.setupLeftSidebar();
       this.setupCityManagement();
+      this.setupStoryPanel();
       this.startGameTick();
     });
     
@@ -452,6 +461,128 @@ export class Game {
     }
   }
 
+  private setupStorySystem() {
+    // Listen for new story messages and update the UI
+    this.storySystem.onMessage((message) => {
+      this.updateStoryPanel();
+    });
+
+    // Set up building unlock callback
+    this.citySystem.setStoryCallback((buildingName: string) => {
+      this.storySystem.buildingUnlocked(buildingName);
+    });
+  }
+
+  private setupStoryPanel() {
+    if (this.storyPanel) return; // Already exists
+
+    this.storyPanel = document.createElement('div');
+    this.storyPanel.style.position = 'absolute';
+    this.storyPanel.style.top = '20px';
+    this.storyPanel.style.right = '20px';
+    this.storyPanel.style.width = '320px';
+    this.storyPanel.style.height = 'calc(100vh - 40px)';
+    this.storyPanel.style.backgroundColor = 'rgba(46, 64, 83, 0.95)';
+    this.storyPanel.style.color = '#ecf0f1';
+    this.storyPanel.style.borderRadius = '8px';
+    this.storyPanel.style.border = '2px solid #34495e';
+    this.storyPanel.style.fontFamily = 'Arial, sans-serif';
+    this.storyPanel.style.fontSize = '13px';
+    this.storyPanel.style.lineHeight = '1.4';
+    this.storyPanel.style.zIndex = '1000';
+    this.storyPanel.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
+    this.storyPanel.style.display = 'flex';
+    this.storyPanel.style.flexDirection = 'column';
+
+    // Header
+    const header = document.createElement('div');
+    header.style.padding = '15px 15px 10px 15px';
+    header.style.borderBottom = '1px solid #34495e';
+    header.style.fontWeight = 'bold';
+    header.style.color = '#f39c12';
+    header.innerHTML = '📖 Settlement Chronicle';
+
+    // Messages container (scrollable)
+    const messagesContainer = document.createElement('div');
+    messagesContainer.style.flex = '1';
+    messagesContainer.style.overflowY = 'auto';
+    messagesContainer.style.padding = '10px 15px';
+    messagesContainer.id = 'story-messages';
+
+    this.storyPanel.appendChild(header);
+    this.storyPanel.appendChild(messagesContainer);
+    document.body.appendChild(this.storyPanel);
+    
+    this.updateStoryPanel();
+  }
+
+  private updateStoryPanel() {
+    if (!this.storyPanel) return;
+
+    const messagesContainer = this.storyPanel.querySelector('#story-messages');
+    if (!messagesContainer) return;
+
+    const messages = this.storySystem.getMessages();
+    
+    if (messages.length === 0) {
+      messagesContainer.innerHTML = '<div style="color: #7f8c8d; text-align: center; padding: 20px; font-style: italic;">Your settlement\'s story begins...</div>';
+      return;
+    }
+
+    // Build all messages HTML
+    const messagesHTML = messages.map((message, index) => {
+      const timeAgo = this.getTimeAgo(message.timestamp);
+      const isLatest = index === messages.length - 1;
+      
+      return `
+        <div style="margin-bottom: 15px; padding: 12px; background: ${isLatest ? 'rgba(241, 196, 15, 0.1)' : 'rgba(255,255,255,0.05)'}; border-radius: 6px; border-left: 3px solid ${isLatest ? '#f1c40f' : '#34495e'};">
+          <div style="font-weight: bold; color: #f39c12; margin-bottom: 6px; font-size: 12px;">
+            ${this.getStoryTitle(message.id)} <span style="color: #95a5a6; font-weight: normal; float: right;">${timeAgo}</span>
+          </div>
+          <div style="color: #ecf0f1; clear: both;">
+            ${message.text}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    messagesContainer.innerHTML = messagesHTML;
+    
+    // Auto-scroll to bottom to show latest message
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  private getTimeAgo(timestamp: number): string {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ago`;
+    } else if (minutes > 0) {
+      return `${minutes}m ago`;
+    } else {
+      return 'just now';
+    }
+  }
+
+  private getStoryTitle(messageId: string): string {
+    const titles: { [key: string]: string } = {
+      'city_founded': 'Settlement Founded',
+      'building_shed': 'New Construction',
+      'building_lumber_yard': 'Industrial Progress',
+      'building_quarry': 'Mining Operations',
+      'building_farm': 'Agricultural Development',
+      'pop_2': 'New Arrivals',
+      'pop_5': 'Growing Community',
+      'pop_10': 'Thriving Village'
+    };
+    
+    return titles[messageId] || 'Settlement News';
+  }
+
   destroy() {
     this.inputSystem.destroy();
     this.renderer.destroy();
@@ -472,6 +603,12 @@ export class Game {
     if (this.leftSidebar) {
       document.body.removeChild(this.leftSidebar);
       this.leftSidebar = null;
+    }
+    
+    // Clean up story panel
+    if (this.storyPanel) {
+      document.body.removeChild(this.storyPanel);
+      this.storyPanel = null;
     }
   }
 }

@@ -74,6 +74,7 @@ export class CitySystem {
   private buildingTypes: Map<string, BuildingType> = new Map();
   private unlockedBuildings: Set<string> = new Set();
   private worldGenerator: WorldGenerator;
+  private storyCallback?: (buildingName: string) => void;
 
   constructor(worldGenerator: WorldGenerator) {
     this.worldGenerator = worldGenerator;
@@ -166,7 +167,16 @@ export class CitySystem {
     if (!this.unlockedBuildings.has('shed') && this.city.resources.wood >= this.city.storage.wood) {
       this.unlockedBuildings.add('shed');
       console.log('🏚️ Shed unlocked! Wood storage was maxed out.');
+      
+      // Trigger story message
+      if (this.storyCallback) {
+        this.storyCallback('shed');
+      }
     }
+  }
+
+  setStoryCallback(callback: (buildingName: string) => void): void {
+    this.storyCallback = callback;
   }
 
   private getTerrainBonusRadius(): number {
