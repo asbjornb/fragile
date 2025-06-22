@@ -12,6 +12,7 @@
 - **Resource management** with food consumption (20 starting food, -1 per move)
 - **City founding mechanics** with transition from exploration to city management
 - **Building system** with 5 building types (hut, farm, shed, lumber_yard, quarry)
+- **Progressive building unlocks** - shed unlocks when wood storage is first maxed
 - **Worker assignment** and resource production systems
 - **Scaling costs** with exponential pricing for building upgrades
 - **Smooth movement animations** (300ms with easing)
@@ -65,6 +66,7 @@
 - Population and worker management
 - Resource storage with capacity limits
 - Building construction and upgrades
+- Progressive building unlock system
 - Integrity and unrest tracking
 
 #### Data-Driven Design

@@ -56,7 +56,7 @@
 |----------|--------|-----------------|-----------|---------|
 | Hut | None | +2 pop capacity. | 8 wood, 2 food | 1.10x exponential |
 | Farm | Plains adjacent | +3 food / tick. | 5 wood, 2 stone | 1.15x exponential |
-| Shed | None | +25 wood storage. | 10 wood | 1.08x exponential |
+| Shed | Wood storage maxed | +25 wood storage. | 10 wood | 1.08x exponential |
 | Lumber Yard | Forest adjacent | +2 wood / tick. | 6 wood, 4 stone | 1.12x exponential |
 | Quarry | Hill adjacent | +2 stone / tick. | 8 wood, 3 food | 1.20x exponential |
 | Watchtower | Tech "Defenses" | Extends city LOS; improves defense. | TBD | TBD |
@@ -64,6 +64,7 @@
 
 **Building Mechanics:**
 - **Scaling Costs:** Each building type uses exponential cost scaling with unique factors
+- **Progressive Unlocks:** Buildings unlock based on gameplay conditions (e.g., shed unlocks when wood storage is first maxed)
 - **Max Levels:** Most buildings cap at level 3-5 for balance
 - **Worker Requirements:** Production buildings (Farm, Lumber Yard, Quarry) require assigned workers
 - **Terrain Requirements:** Some buildings require specific adjacent terrain types

@@ -71,9 +71,20 @@ export interface BuildingType {
 export class CitySystem {
   private city: City | null = null;
   private buildingTypes: Map<string, BuildingType> = new Map();
+  private unlockedBuildings: Set<string> = new Set();
 
   constructor() {
     this.loadBuildingData();
+    this.initializeUnlocks();
+  }
+
+  private initializeUnlocks() {
+    // Buildings available from the start
+    this.unlockedBuildings.add('hut');
+    this.unlockedBuildings.add('farm');
+    this.unlockedBuildings.add('lumber_yard');
+    this.unlockedBuildings.add('quarry');
+    // shed is unlocked later when wood storage is maxed
   }
 
   private loadBuildingData() {
@@ -124,6 +135,9 @@ export class CitySystem {
       founded: Date.now()
     };
 
+    // Check for initial unlocks
+    this.checkUnlocks();
+
     return { ...this.city };
   }
 
@@ -137,7 +151,19 @@ export class CitySystem {
 
   // Building management
   getBuildingTypes(): BuildingType[] {
-    return Array.from(this.buildingTypes.values());
+    return Array.from(this.buildingTypes.values()).filter(building => 
+      this.unlockedBuildings.has(building.id)
+    );
+  }
+
+  private checkUnlocks(): void {
+    if (!this.city) return;
+
+    // Unlock shed when wood storage is maxed out
+    if (!this.unlockedBuildings.has('shed') && this.city.resources.wood >= this.city.storage.wood) {
+      this.unlockedBuildings.add('shed');
+      console.log('🏚️ Shed unlocked! Wood storage was maxed out.');
+    }
   }
 
   // Calculate current cost for a building type based on how many have been built
@@ -225,6 +251,9 @@ export class CitySystem {
 
     this.city.buildings.push(newBuilding);
     this.applyBuildingEffects();
+    
+    // Check for unlocks after building (in case building affects storage capacity)
+    this.checkUnlocks();
 
     return { success: true, building: newBuilding };
   }
@@ -291,6 +320,9 @@ export class CitySystem {
       this.city.resources.stone + 1, 
       this.city.storage.stone
     );
+
+    // Check for building unlocks after resource changes
+    this.checkUnlocks();
 
     // Population growth (if we have food surplus and space)
     if (this.city.resources.food >= 3 && this.city.population < this.city.maxPopulation) {
