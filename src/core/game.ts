@@ -456,35 +456,65 @@ export class Game {
   }
 
   private renderBuildingsTab(contentArea: HTMLElement) {
+    const city = this.citySystem.getCity();
+    if (!city) return;
+
     const availableBuildings = this.citySystem.getBuildingTypes();
     const buildButtons = availableBuildings.map(buildingType => {
       const canBuild = this.citySystem.canBuildBuilding(buildingType.id);
+      const currentCost = this.citySystem.getCurrentBuildingCost(buildingType.id);
+      
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.display = 'flex';
+      buttonContainer.style.flexDirection = 'column';
+      buttonContainer.style.alignItems = 'center';
+      buttonContainer.style.margin = '0 8px';
+      buttonContainer.style.minWidth = '140px';
       
       const button = document.createElement('button');
       button.textContent = `${buildingType.icon} ${buildingType.name}`;
-      button.style.padding = '8px 16px';
+      button.style.padding = '8px 12px';
       button.style.fontSize = '14px';
       button.style.border = 'none';
-      button.style.borderRadius = '6px';
+      button.style.borderRadius = '6px 6px 0 0';
       button.style.cursor = canBuild.canBuild ? 'pointer' : 'not-allowed';
       button.style.backgroundColor = canBuild.canBuild ? '#27ae60' : '#7f8c8d';
       button.style.color = canBuild.canBuild ? 'white' : '#bdc3c7';
       button.style.fontWeight = '600';
-      button.style.minWidth = '120px';
+      button.style.width = '100%';
+      button.style.marginBottom = '0';
+      
+      // Cost display
+      const costDisplay = document.createElement('div');
+      costDisplay.style.backgroundColor = '#34495e';
+      costDisplay.style.padding = '4px 8px';
+      costDisplay.style.fontSize = '11px';
+      costDisplay.style.borderRadius = '0 0 6px 6px';
+      costDisplay.style.width = '100%';
+      costDisplay.style.boxSizing = 'border-box';
+      costDisplay.style.textAlign = 'center';
+      costDisplay.style.lineHeight = '1.2';
+
+      const costItems = Object.entries(currentCost).map(([resource, cost]) => {
+        const available = city.resources[resource as keyof typeof city.resources] || 0;
+        const hasEnough = available >= cost;
+        const color = hasEnough ? '#2ecc71' : '#e74c3c';
+        return `<span style="color: ${color}; font-weight: 500;">${cost} ${resource}</span>`;
+      });
+      
+      costDisplay.innerHTML = costItems.join(' ');
       
       if (!canBuild.canBuild) {
         button.title = canBuild.reason || 'Cannot build';
         button.disabled = true;
       } else {
-        const currentCost = this.citySystem.getCurrentBuildingCost(buildingType.id);
-        const costText = Object.entries(currentCost)
-          .map(([resource, amount]) => `${amount} ${resource}`)
-          .join(', ');
-        button.title = `${buildingType.description}\nCost: ${costText}`;
+        button.title = buildingType.description;
         button.addEventListener('click', () => this.buildBuilding(buildingType.id));
       }
       
-      return button;
+      buttonContainer.appendChild(button);
+      buttonContainer.appendChild(costDisplay);
+      return buttonContainer;
     });
 
     // Add construction header
@@ -532,28 +562,62 @@ export class Game {
       const canResearch = this.techSystem.canResearch(tech.id);
       const hasEnoughResearch = city.resources.research >= tech.cost.research;
       
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.display = 'flex';
+      buttonContainer.style.flexDirection = 'column';
+      buttonContainer.style.alignItems = 'center';
+      buttonContainer.style.margin = '0 8px';
+      buttonContainer.style.minWidth = '140px';
+      
       const button = document.createElement('button');
       button.textContent = `${tech.icon} ${tech.name}`;
-      button.style.padding = '8px 16px';
+      button.style.padding = '8px 12px';
       button.style.fontSize = '14px';
       button.style.border = 'none';
-      button.style.borderRadius = '6px';
+      button.style.borderRadius = '6px 6px 0 0';
       button.style.cursor = (canResearch.canResearch && hasEnoughResearch) ? 'pointer' : 'not-allowed';
       button.style.backgroundColor = (canResearch.canResearch && hasEnoughResearch) ? '#9b59b6' : '#7f8c8d';
       button.style.color = (canResearch.canResearch && hasEnoughResearch) ? 'white' : '#bdc3c7';
       button.style.fontWeight = '600';
-      button.style.minWidth = '120px';
+      button.style.width = '100%';
+      button.style.marginBottom = '0';
       
-      if (!canResearch.canResearch || !hasEnoughResearch) {
-        const reason = !hasEnoughResearch ? `Need ${tech.cost.research} research` : canResearch.reason;
-        button.title = reason || 'Cannot research';
+      // Cost display
+      const costDisplay = document.createElement('div');
+      costDisplay.style.backgroundColor = '#34495e';
+      costDisplay.style.padding = '4px 8px';
+      costDisplay.style.fontSize = '11px';
+      costDisplay.style.borderRadius = '0 0 6px 6px';
+      costDisplay.style.width = '100%';
+      costDisplay.style.boxSizing = 'border-box';
+      costDisplay.style.textAlign = 'center';
+      costDisplay.style.lineHeight = '1.2';
+
+      const available = city.resources.research;
+      const cost = tech.cost.research;
+      const hasEnough = available >= cost;
+      const color = hasEnough ? '#2ecc71' : '#e74c3c';
+      
+      costDisplay.innerHTML = `<span style="color: ${color}; font-weight: 500;">${cost} research</span><br><span style="color: #95a5a6; font-size: 10px;">${tech.researchTime}s</span>`;
+      
+      if (!canResearch.canResearch) {
+        button.title = canResearch.reason || 'Cannot research';
+        button.disabled = true;
+        // Show prerequisite in cost display if that's the issue
+        if (canResearch.reason?.includes('Requires')) {
+          costDisplay.innerHTML = `<span style="color: #e67e22; font-size: 10px;">${canResearch.reason}</span>`;
+        }
+      } else if (!hasEnoughResearch) {
+        button.title = `Need ${cost} research points`;
         button.disabled = true;
       } else {
-        button.title = `${tech.description}\nCost: ${tech.cost.research} research\nTime: ${tech.researchTime}s`;
+        button.title = tech.description;
         button.addEventListener('click', () => this.startResearch(tech.id));
       }
       
-      return button;
+      buttonContainer.appendChild(button);
+      buttonContainer.appendChild(costDisplay);
+      return buttonContainer;
     });
 
     techButtons.forEach(button => contentArea.appendChild(button));
