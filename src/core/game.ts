@@ -4,6 +4,7 @@ import { SettlerSystem } from '../entities/settler';
 import { CitySystem } from '../entities/city';
 import { InputSystem } from '../systems/input';
 import { StorySystem } from '../systems/events';
+import { TechSystem } from '../systems/tech';
 
 export class Game {
   private renderer: HexRenderer;
@@ -11,17 +12,21 @@ export class Game {
   private citySystem: CitySystem;
   private inputSystem: InputSystem;
   private storySystem: StorySystem;
+  private techSystem: TechSystem;
   private settleButton: HTMLButtonElement | null = null;
+  private settlementUI: HTMLDivElement | null = null;
   private managementBar: HTMLDivElement | null = null;
   private leftSidebar: HTMLDivElement | null = null;
   private storyPanel: HTMLDivElement | null = null;
   private gameTickInterval: number | null = null;
+  private currentTab: 'buildings' | 'research' = 'buildings';
 
   constructor(container: HTMLElement) {
     this.renderer = new HexRenderer(container);
     this.settlerSystem = new SettlerSystem();
     this.citySystem = new CitySystem(this.renderer.getWorldGenerator());
     this.storySystem = new StorySystem();
+    this.techSystem = new TechSystem();
     this.inputSystem = new InputSystem(
       this.renderer.getCanvas(),
       () => this.renderer.getCameraOffset()
@@ -65,13 +70,14 @@ export class Game {
 
   private setupUI(container: HTMLElement) {
     // Create UI container for game controls
-    const uiContainer = document.createElement('div');
-    uiContainer.style.position = 'absolute';
-    uiContainer.style.top = '10px';
-    uiContainer.style.left = '10px';
-    uiContainer.style.zIndex = '1000';
-    uiContainer.style.display = 'flex';
-    uiContainer.style.gap = '10px';
+    this.settlementUI = document.createElement('div');
+    this.settlementUI.id = 'settlement-ui';
+    this.settlementUI.style.position = 'absolute';
+    this.settlementUI.style.top = '10px';
+    this.settlementUI.style.left = '10px';
+    this.settlementUI.style.zIndex = '1000';
+    this.settlementUI.style.display = 'flex';
+    this.settlementUI.style.gap = '10px';
     
     // Settle button
     this.settleButton = document.createElement('button');
@@ -86,8 +92,8 @@ export class Game {
     
     this.settleButton.addEventListener('click', () => this.settleCity());
     
-    uiContainer.appendChild(this.settleButton);
-    container.appendChild(uiContainer);
+    this.settlementUI.appendChild(this.settleButton);
+    container.appendChild(this.settlementUI);
     
     this.updateUI();
   }
@@ -120,19 +126,40 @@ export class Game {
   }
 
   private updateUI() {
-    if (!this.settleButton) return;
+    if (!this.settlementUI) return;
     
     const hasCity = this.citySystem.hasCity();
     
     if (hasCity) {
-      // Hide settle button completely when city exists
-      this.settleButton.style.display = 'none';
+      // Hide entire settlement UI when city exists
+      this.settlementUI.style.display = 'none';
+      // Move hex grid up by adjusting canvas container
+      this.adjustHexGridForCityMode(true);
     } else {
-      // Show settle button during exploration
-      this.settleButton.style.display = 'block';
-      this.settleButton.textContent = 'Settle Here';
-      this.settleButton.style.backgroundColor = '#4CAF50';
-      this.settleButton.style.cursor = 'pointer';
+      // Show settlement UI during exploration
+      this.settlementUI.style.display = 'flex';
+      this.adjustHexGridForCityMode(false);
+      if (this.settleButton) {
+        this.settleButton.textContent = 'Settle Here';
+        this.settleButton.style.backgroundColor = '#4CAF50';
+        this.settleButton.style.cursor = 'pointer';
+      }
+    }
+  }
+
+  private adjustHexGridForCityMode(isCityMode: boolean) {
+    const canvas = this.renderer.getCanvas();
+    
+    if (canvas) {
+      if (isCityMode) {
+        // Move canvas up to reclaim settlement UI space
+        canvas.style.transform = 'translateY(-60px)';
+        canvas.style.transition = 'transform 0.3s ease-out';
+      } else {
+        // Reset canvas position for exploration mode
+        canvas.style.transform = 'translateY(0px)';
+        canvas.style.transition = 'transform 0.3s ease-out';
+      }
     }
   }
 
@@ -147,7 +174,7 @@ export class Game {
     this.leftSidebar.style.position = 'fixed';
     this.leftSidebar.style.left = '0';
     this.leftSidebar.style.top = '0';
-    this.leftSidebar.style.bottom = '80px'; // Leave space for bottom bar
+    this.leftSidebar.style.bottom = '120px'; // Leave space for bottom bar
     this.leftSidebar.style.width = '300px';
     this.leftSidebar.style.backgroundColor = '#2c3e50';
     this.leftSidebar.style.zIndex = '900';
@@ -287,16 +314,47 @@ export class Game {
         </div>
       </div>
 
+      <div style="margin-bottom: 20px;">
+        <div style="padding: 10px; background: #34495e; border-radius: 6px;">
+          <h3 style="margin: 0 0 10px 0; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('span').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';">
+            🔬 Research Technologies
+            <span style="font-size: 12px;">▼</span>
+          </h3>
+          <div style="display: none;">
+            ${this.getResearchedTechsHTML()}
+          </div>
+        </div>
+      </div>
+
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <h3 style="margin: 0; font-size: 16px;">🏘️ Buildings</h3>
           <button id="unassign-all" style="padding: 6px 12px; font-size: 12px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer;">Unassign All</button>
         </div>
-        <div style="max-height: calc(100vh - 400px); overflow-y: auto;">
+        <div style="max-height: calc(100vh - 600px); overflow-y: auto;">
           ${buildingsList || '<div style="font-size: 14px; color: #7f8c8d; text-align: center; padding: 30px;">No buildings yet</div>'}
         </div>
       </div>
     `;
+  }
+
+  private getResearchedTechsHTML(): string {
+    const researchedTechs = this.techSystem.getResearchedTechs();
+    
+    if (researchedTechs.length === 0) {
+      return '<div style="font-size: 12px; color: #7f8c8d; text-align: center; padding: 15px; font-style: italic;">No technologies researched yet</div>';
+    }
+
+    return researchedTechs.map(tech => `
+      <div style="font-size: 12px; margin: 6px 0; padding: 6px; background: rgba(155, 89, 182, 0.2); border-radius: 4px; border-left: 3px solid #9b59b6;">
+        <div style="font-weight: 500; color: #ecf0f1; margin-bottom: 2px;">
+          ${tech.icon} ${tech.name}
+        </div>
+        <div style="color: #bdc3c7; font-size: 11px;">
+          ${tech.description}
+        </div>
+      </div>
+    `).join('');
   }
 
   private setupCityManagement() {
@@ -305,25 +363,103 @@ export class Game {
     const city = this.citySystem.getCity();
     if (!city) return;
 
-    // Create simplified bottom management bar for construction only
+    // Create tabbed bottom management bar
     this.managementBar = document.createElement('div');
     this.managementBar.style.position = 'fixed';
     this.managementBar.style.bottom = '0';
     this.managementBar.style.left = '0';
     this.managementBar.style.right = '0';
-    this.managementBar.style.height = '80px';
+    this.managementBar.style.height = '120px';
     this.managementBar.style.backgroundColor = '#2c3e50';
     this.managementBar.style.borderTop = '1px solid #34495e';
     this.managementBar.style.display = 'flex';
-    this.managementBar.style.alignItems = 'center';
-    this.managementBar.style.justifyContent = 'center';
-    this.managementBar.style.padding = '15px 320px'; // Account for left and right panels
-    this.managementBar.style.gap = '10px';
+    this.managementBar.style.flexDirection = 'column';
     this.managementBar.style.zIndex = '1000';
 
+    // Create tab header
+    const tabHeader = document.createElement('div');
+    tabHeader.style.display = 'flex';
+    tabHeader.style.height = '40px';
+    tabHeader.style.backgroundColor = '#34495e';
+    
+    // Buildings tab
+    const buildingsTab = document.createElement('button');
+    buildingsTab.textContent = '🏗️ Buildings';
+    buildingsTab.style.padding = '8px 20px';
+    buildingsTab.style.border = 'none';
+    buildingsTab.style.backgroundColor = this.currentTab === 'buildings' ? '#2c3e50' : '#34495e';
+    buildingsTab.style.color = 'white';
+    buildingsTab.style.cursor = 'pointer';
+    buildingsTab.style.borderRight = '1px solid #2c3e50';
+    buildingsTab.addEventListener('click', () => this.switchTab('buildings'));
+    
+    // Research tab
+    const researchTab = document.createElement('button');
+    researchTab.textContent = '🔬 Research';
+    researchTab.style.padding = '8px 20px';
+    researchTab.style.border = 'none';
+    researchTab.style.backgroundColor = this.currentTab === 'research' ? '#2c3e50' : '#34495e';
+    researchTab.style.color = 'white';
+    researchTab.style.cursor = 'pointer';
+    researchTab.addEventListener('click', () => this.switchTab('research'));
+    
+    tabHeader.appendChild(buildingsTab);
+    tabHeader.appendChild(researchTab);
+
+    // Create content area
+    const contentArea = document.createElement('div');
+    contentArea.style.flex = '1';
+    contentArea.style.display = 'flex';
+    contentArea.style.alignItems = 'center';
+    contentArea.style.justifyContent = 'center';
+    contentArea.style.padding = '10px 320px'; // Account for left and right panels
+    contentArea.style.gap = '10px';
+    contentArea.id = 'management-content';
+
+    this.managementBar.appendChild(tabHeader);
+    this.managementBar.appendChild(contentArea);
+
+    document.body.appendChild(this.managementBar);
+    
+    // Load initial tab content
+    this.updateTabContent();
+  }
+
+  private switchTab(tab: 'buildings' | 'research') {
+    this.currentTab = tab;
+    this.updateTabContent();
+    
+    // Update tab button styles
+    if (this.managementBar) {
+      const tabs = this.managementBar.querySelectorAll('button');
+      tabs.forEach((tabButton, index) => {
+        if (index === 0) { // Buildings tab
+          tabButton.style.backgroundColor = tab === 'buildings' ? '#2c3e50' : '#34495e';
+        } else if (index === 1) { // Research tab  
+          tabButton.style.backgroundColor = tab === 'research' ? '#2c3e50' : '#34495e';
+        }
+      });
+    }
+  }
+
+  private updateTabContent() {
+    const contentArea = document.getElementById('management-content');
+    if (!contentArea) return;
+
+    contentArea.innerHTML = '';
+
+    if (this.currentTab === 'buildings') {
+      this.renderBuildingsTab(contentArea);
+    } else {
+      this.renderResearchTab(contentArea);
+    }
+  }
+
+  private renderBuildingsTab(contentArea: HTMLElement) {
     const availableBuildings = this.citySystem.getBuildingTypes();
     const buildButtons = availableBuildings.map(buildingType => {
       const canBuild = this.citySystem.canBuildBuilding(buildingType.id);
+      
       const button = document.createElement('button');
       button.textContent = `${buildingType.icon} ${buildingType.name}`;
       button.style.padding = '8px 16px';
@@ -355,14 +491,94 @@ export class Game {
     const headerDiv = document.createElement('div');
     headerDiv.style.color = 'white';
     headerDiv.style.fontSize = '18px';
-    headerDiv.style.fontWeight = '600';
+    headerDiv.style.fontWeight = 'bold';
     headerDiv.style.marginRight = '20px';
-    headerDiv.textContent = '🔨 Build:';
+    headerDiv.textContent = '🏗️ Construct:';
+    
+    contentArea.appendChild(headerDiv);
+    buildButtons.forEach(button => contentArea.appendChild(button));
+  }
 
-    this.managementBar.appendChild(headerDiv);
-    buildButtons.forEach(button => this.managementBar!.appendChild(button));
+  private renderResearchTab(contentArea: HTMLElement) {
+    const city = this.citySystem.getCity();
+    if (!city) return;
 
-    document.body.appendChild(this.managementBar);
+    const availableTechs = this.techSystem.getAvailableTechs();
+    const currentResearch = this.techSystem.getCurrentResearch();
+
+    // Header
+    const headerDiv = document.createElement('div');
+    headerDiv.style.color = 'white';
+    headerDiv.style.fontSize = '18px';
+    headerDiv.style.fontWeight = 'bold';
+    headerDiv.style.marginRight = '20px';
+    headerDiv.textContent = '🔬 Research:';
+    contentArea.appendChild(headerDiv);
+
+    // Show current research progress if any
+    if (currentResearch) {
+      const progressDiv = document.createElement('div');
+      progressDiv.style.color = '#f39c12';
+      progressDiv.style.fontSize = '14px';
+      progressDiv.style.marginRight = '20px';
+      const tech = this.techSystem.getTechTypes().find(t => t.id === currentResearch.techId);
+      progressDiv.textContent = `Researching ${tech?.name}: ${Math.floor(currentResearch.progress)}%`;
+      contentArea.appendChild(progressDiv);
+      return;
+    }
+
+    // Show available techs
+    const techButtons = availableTechs.map(tech => {
+      const canResearch = this.techSystem.canResearch(tech.id);
+      const hasEnoughResearch = city.resources.research >= tech.cost.research;
+      
+      const button = document.createElement('button');
+      button.textContent = `${tech.icon} ${tech.name}`;
+      button.style.padding = '8px 16px';
+      button.style.fontSize = '14px';
+      button.style.border = 'none';
+      button.style.borderRadius = '6px';
+      button.style.cursor = (canResearch.canResearch && hasEnoughResearch) ? 'pointer' : 'not-allowed';
+      button.style.backgroundColor = (canResearch.canResearch && hasEnoughResearch) ? '#9b59b6' : '#7f8c8d';
+      button.style.color = (canResearch.canResearch && hasEnoughResearch) ? 'white' : '#bdc3c7';
+      button.style.fontWeight = '600';
+      button.style.minWidth = '120px';
+      
+      if (!canResearch.canResearch || !hasEnoughResearch) {
+        const reason = !hasEnoughResearch ? `Need ${tech.cost.research} research` : canResearch.reason;
+        button.title = reason || 'Cannot research';
+        button.disabled = true;
+      } else {
+        button.title = `${tech.description}\nCost: ${tech.cost.research} research\nTime: ${tech.researchTime}s`;
+        button.addEventListener('click', () => this.startResearch(tech.id));
+      }
+      
+      return button;
+    });
+
+    techButtons.forEach(button => contentArea.appendChild(button));
+
+    if (availableTechs.length === 0) {
+      const noTechsDiv = document.createElement('div');
+      noTechsDiv.style.color = '#7f8c8d';
+      noTechsDiv.style.fontSize = '14px';
+      noTechsDiv.textContent = 'No research available - complete prerequisites first';
+      contentArea.appendChild(noTechsDiv);
+    }
+  }
+
+  private startResearch(techId: string) {
+    const city = this.citySystem.getCity();
+    if (!city) return;
+
+    if (this.techSystem.startResearch(techId, city.resources.research)) {
+      const tech = this.techSystem.getTechTypes().find(t => t.id === techId);
+      if (tech) {
+        city.resources.research -= tech.cost.research;
+        this.refreshManagementBar();
+        console.log(`Started researching ${tech.name}`);
+      }
+    }
   }
 
   private buildBuilding(buildingTypeId: string) {
@@ -422,12 +638,8 @@ export class Game {
     this.updateLeftSidebar();
     this.setupWorkerButtons();
     
-    // Refresh bottom bar
-    if (this.managementBar) {
-      document.body.removeChild(this.managementBar);
-      this.managementBar = null;
-      this.setupCityManagement();
-    }
+    // Refresh tab content instead of recreating the entire bar
+    this.updateTabContent();
   }
 
   private startGameTick() {
@@ -437,6 +649,17 @@ export class Game {
     this.gameTickInterval = window.setInterval(() => {
       if (this.citySystem.hasCity()) {
         this.citySystem.generateResources();
+        
+        // Update research progress
+        const researchUpdate = this.techSystem.updateResearch();
+        if (researchUpdate.completed) {
+          const tech = this.techSystem.getTechTypes().find(t => t.id === researchUpdate.completed);
+          if (tech) {
+            console.log(`Research completed: ${tech.name}`);
+            // TODO: Add story message for research completion
+          }
+        }
+        
         this.refreshManagementBar();
         this.updateLeftSidebar(); // Update sidebar with terrain bonuses
         this.setupWorkerButtons(); // Re-setup event listeners after innerHTML update
@@ -478,7 +701,7 @@ export class Game {
     this.storyPanel.style.position = 'fixed';
     this.storyPanel.style.top = '0';
     this.storyPanel.style.right = '0';
-    this.storyPanel.style.bottom = '80px'; // Leave space for bottom bar
+    this.storyPanel.style.bottom = '120px'; // Leave space for bottom bar
     this.storyPanel.style.width = '320px';
     this.storyPanel.style.backgroundColor = '#2c3e50';
     this.storyPanel.style.color = '#ecf0f1';
@@ -604,6 +827,12 @@ export class Game {
     if (this.storyPanel) {
       document.body.removeChild(this.storyPanel);
       this.storyPanel = null;
+    }
+    
+    // Clean up settlement UI
+    if (this.settlementUI && this.settlementUI.parentElement) {
+      this.settlementUI.parentElement.removeChild(this.settlementUI);
+      this.settlementUI = null;
     }
   }
 }

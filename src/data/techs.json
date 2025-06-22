@@ -1,0 +1,110 @@
+{
+  "techs": {
+    "basic_tools": {
+      "id": "basic_tools",
+      "name": "Basic Tools",
+      "description": "Improves worker efficiency with simple tools",
+      "icon": "🔨",
+      "cost": {
+        "research": 10
+      },
+      "researchTime": 30,
+      "prerequisites": [],
+      "effects": {
+        "workerEfficiency": 0.1
+      },
+      "unlocks": ["advanced_tools"]
+    },
+    "advanced_tools": {
+      "id": "advanced_tools", 
+      "name": "Advanced Tools",
+      "description": "Better tools significantly boost productivity",
+      "icon": "⚒️",
+      "cost": {
+        "research": 25
+      },
+      "researchTime": 60,
+      "prerequisites": ["basic_tools"],
+      "effects": {
+        "workerEfficiency": 0.2
+      },
+      "unlocks": ["specialized_tools"]
+    },
+    "specialized_tools": {
+      "id": "specialized_tools",
+      "name": "Specialized Tools", 
+      "description": "Specialized tools for each profession",
+      "icon": "🛠️",
+      "cost": {
+        "research": 50
+      },
+      "researchTime": 120,
+      "prerequisites": ["advanced_tools"],
+      "effects": {
+        "workerEfficiency": 0.3
+      },
+      "unlocks": []
+    },
+    "agriculture": {
+      "id": "agriculture",
+      "name": "Agriculture",
+      "description": "Farming techniques increase food production",
+      "icon": "🌾",
+      "cost": {
+        "research": 15
+      },
+      "researchTime": 45,
+      "prerequisites": [],
+      "effects": {
+        "foodProduction": 0.25
+      },
+      "unlocks": ["crop_rotation"]
+    },
+    "crop_rotation": {
+      "id": "crop_rotation",
+      "name": "Crop Rotation",
+      "description": "Advanced farming for better yields",
+      "icon": "🚜",
+      "cost": {
+        "research": 35
+      },
+      "researchTime": 90,
+      "prerequisites": ["agriculture"],
+      "effects": {
+        "foodProduction": 0.5
+      },
+      "unlocks": []
+    },
+    "construction": {
+      "id": "construction",
+      "name": "Construction",
+      "description": "Better building techniques reduce costs",
+      "icon": "🏗️",
+      "cost": {
+        "research": 20
+      },
+      "researchTime": 60,
+      "prerequisites": [],
+      "effects": {
+        "buildingCostReduction": 0.1
+      },
+      "unlocks": ["masonry"]
+    },
+    "masonry": {
+      "id": "masonry",
+      "name": "Masonry",
+      "description": "Stone construction techniques",
+      "icon": "🧱",
+      "cost": {
+        "research": 40
+      },
+      "researchTime": 100,
+      "prerequisites": ["construction"],
+      "effects": {
+        "buildingCostReduction": 0.2,
+        "stoneProduction": 0.2
+      },
+      "unlocks": []
+    }
+  }
+}
