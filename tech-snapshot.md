@@ -10,6 +10,10 @@
 - **Procedural world generation** with 6 tile types and 5 resource types
 - **Fog-of-war system** with visibility and exploration tracking
 - **Resource management** with food consumption (20 starting food, -1 per move)
+- **City founding mechanics** with transition from exploration to city management
+- **Building system** with 5 building types (hut, farm, shed, lumber_yard, quarry)
+- **Worker assignment** and resource production systems
+- **Scaling costs** with exponential pricing for building upgrades
 - **Smooth movement animations** (300ms with easing)
 
 ### Technical Architecture
@@ -55,14 +59,33 @@
 - Orchestrates all systems
 - Handles movement logic and validation
 - Manages animation callbacks
+- Controls phase transitions (exploration → city management)
+
+**City Management** (`src/entities/city.ts`)
+- Population and worker management
+- Resource storage with capacity limits
+- Building construction and upgrades
+- Integrity and unrest tracking
 
 #### Data-Driven Design
 
 **Tile Configuration** (`src/data/tiles.json`)
 ```json
 {
-  "plains": { "color": "#90EE90", "resources": ["wild_game"], "weight": 40 },
+  "plains": { "color": "#9ACD32", "resources": ["wild_game"], "weight": 40 },
   "forest": { "color": "#228B22", "resources": ["wood"], "weight": 25 },
+  // ... etc
+}
+```
+
+**Building Configuration** (`src/data/buildings.json`)
+```json
+{
+  "hut": { 
+    "baseCost": { "wood": 8, "food": 2 },
+    "effects": { "populationCapacity": 2 },
+    "pricing": { "scalingFactor": 1.10, "scalingType": "exponential" }
+  },
   // ... etc
 }
 ```
@@ -95,13 +118,15 @@ src/
 │   ├── hex.ts      # Hexagonal coordinate system
 │   └── renderer.ts # PixiJS rendering engine
 ├── entities/       # Game objects
-│   └── settler.ts  # Settler entity and logic
+│   ├── settler.ts  # Settler entity and logic
+│   └── city.ts     # City entity and management
 ├── systems/        # Game systems
 │   ├── input.ts    # Mouse input handling
 │   ├── visibility.ts # Fog-of-war system
 │   └── worldgen.ts # Procedural world generation
 ├── data/           # Configuration
-│   └── tiles.json  # Tile and resource definitions
+│   ├── tiles.json  # Tile and resource definitions
+│   └── buildings.json # Building configurations
 └── main.ts         # Application entry point
 ```
 
@@ -144,16 +169,17 @@ npm run test     # Run Playwright tests
 ## Known Limitations
 
 1. **No save/load system** - Progress lost on refresh
-2. **No resource collection** - Resources are visual only
-3. **No game objectives** - Pure exploration currently
-4. **No turn system** - Real-time movement only
+2. **No dynamic events** - No bandit raids, harsh winters, or unrest mechanics
+3. **No tech tree** - Linear progression not yet implemented
+4. **No UI overlay** - Resource management through console only
 5. **Memory growth** - Generated tiles never cleaned up
 
 ## Next Planned Features
 1. Build basic UI overlay with resource display
 2. Implement save/load with localStorage
-3. Add city founding mechanics
-4. Create building system
+3. Add dynamic events (bandit raids, harsh winters)
+4. Create tech tree and research system
+5. Implement unrest and collapse mechanics
 
 ---
 
