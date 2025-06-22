@@ -19,6 +19,7 @@
 - ✅ Include city center tile in terrain bonuses and make radius extensible
 - ✅ Remove broken resource node rendering (will implement properly later)
 - ✅ Fixed terrain generation - sorted tile types for correct weighted selection
+- ✅ Added adaptive terrain clustering - rare terrain (rivers, mountains) gets strong clustering bonuses while common terrain (plains, forest) gets minimal clustering for natural formations
 
 ## In Progress / Pending
 

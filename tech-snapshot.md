@@ -7,7 +7,7 @@
 
 ### Core Gameplay
 - **Settler exploration** with click-to-move mechanics
-- **Procedural world generation** with 6 tile types and 5 resource types
+- **Procedural world generation** with 6 tile types, 5 resource types, and adaptive terrain clustering
 - **Fog-of-war system** with visibility and exploration tracking
 - **Resource management** with food consumption (20 starting food, -1 per move)
 - **City founding mechanics** with transition from exploration to city management

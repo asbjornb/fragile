@@ -1,4 +1,4 @@
-import { HexCoordinate } from '../core/hex';
+import { HexCoordinate, HexUtils } from '../core/hex';
 import tilesData from '../data/tiles.json';
 
 export interface TileType {
@@ -69,14 +69,17 @@ export class WorldGenerator {
   private selectTileType(hex: HexCoordinate): TileType {
     const random = this.seededRandom(hex);
     
-    // Sort tile types by weight (highest first) for consistent selection
-    const sortedTileTypes = Array.from(this.tileTypes.values()).sort((a, b) => b.weight - a.weight);
+    // Get base weights and apply neighbor influence
+    const modifiedWeights = this.getModifiedWeights(hex);
+    
+    // Sort by modified weight for consistent selection
+    const sortedTileTypes = modifiedWeights.sort((a, b) => b.weight - a.weight);
     const totalWeight = sortedTileTypes.reduce((sum, type) => sum + type.weight, 0);
     
     let currentWeight = 0;
     const targetWeight = random * totalWeight;
     
-    // Debug: Log selection process for a few tiles
+    // Debug: Log selection process for a few tiles (showing adaptive clustering effects)
     if (Math.abs(hex.q) <= 1 && Math.abs(hex.r) <= 1) {
       console.log(`Tile (${hex.q}, ${hex.r}): random=${random.toFixed(3)}, target=${targetWeight.toFixed(1)}, total=${totalWeight}`);
     }
@@ -84,15 +87,66 @@ export class WorldGenerator {
     for (const tileType of sortedTileTypes) {
       currentWeight += tileType.weight;
       if (Math.abs(hex.q) <= 1 && Math.abs(hex.r) <= 1) {
-        console.log(`  ${tileType.name}: weight=${tileType.weight}, cumulative=${currentWeight}, selected=${currentWeight >= targetWeight}`);
+        console.log(`  ${tileType.type.name}: weight=${tileType.weight}, cumulative=${currentWeight}, selected=${currentWeight >= targetWeight}`);
       }
       if (currentWeight >= targetWeight) {
-        return tileType;
+        return tileType.type;
       }
     }
     
     // Fallback to plains
     return this.tileTypes.get('plains')!;
+  }
+
+  private getModifiedWeights(hex: HexCoordinate): Array<{type: TileType, weight: number}> {
+    // Get neighbors and count terrain types
+    const neighbors = HexUtils.hexNeighbors(hex);
+    const neighborCounts = new Map<string, number>();
+    
+    neighbors.forEach(neighborHex => {
+      const existingTile = this.getTile(neighborHex);
+      if (existingTile) {
+        const count = neighborCounts.get(existingTile.type.id) || 0;
+        neighborCounts.set(existingTile.type.id, count + 1);
+      }
+    });
+    
+    // Apply neighbor influence to weights
+    const result: Array<{type: TileType, weight: number}> = [];
+    
+    this.tileTypes.forEach((tileType) => {
+      let modifiedWeight = tileType.weight;
+      const neighborCount = neighborCounts.get(tileType.id) || 0;
+      
+      if (neighborCount > 0) {
+        // Apply different clustering bonuses based on terrain rarity
+        let bonusMultiplier = 0;
+        
+        if (tileType.weight <= 3) {
+          // Very rare terrain (rivers, lakes) - massive clustering bonus
+          bonusMultiplier = 2.0; // 200% bonus per neighbor
+        } else if (tileType.weight <= 10) {
+          // Rare terrain (mountains) - strong clustering bonus
+          bonusMultiplier = 1.0; // 100% bonus per neighbor
+        } else if (tileType.weight <= 20) {
+          // Medium terrain (hills) - moderate clustering bonus
+          bonusMultiplier = 0.4; // 40% bonus per neighbor
+        } else if (tileType.weight <= 30) {
+          // Common terrain (forest) - small clustering bonus
+          bonusMultiplier = 0.1; // 10% bonus per neighbor
+        } else {
+          // Very common terrain (plains) - no clustering bonus
+          bonusMultiplier = 0; // No clustering for plains
+        }
+        
+        const bonus = modifiedWeight * bonusMultiplier * neighborCount;
+        modifiedWeight += bonus;
+      }
+      
+      result.push({ type: tileType, weight: modifiedWeight });
+    });
+    
+    return result;
   }
 
   private hasResource(hex: HexCoordinate, tileType: TileType): { hasResource: boolean; resourceType?: ResourceType } {
