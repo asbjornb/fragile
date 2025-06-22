@@ -249,10 +249,10 @@ export class Game {
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-size: 12px; color: #95a5a6;">Workers: ${data.totalWorkers}/${data.maxWorkers}</span>
             <div style="display: flex; align-items: center; gap: 6px; min-width: 50px; justify-content: flex-end;">
-              ${data.totalWorkers > 0 ? `<button class="worker-btn" data-action="unassign" data-building-type="${buildingTypeId}" 
-                      style="width: 22px; height: 22px; font-size: 12px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer;">-</button>` : ''}
-              ${(data.totalWorkers < data.maxWorkers && city.availableWorkers > 0) ? `<button class="worker-btn" data-action="assign" data-building-type="${buildingTypeId}"
-                      style="width: 22px; height: 22px; font-size: 12px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer;">+</button>` : ''}
+              <button class="worker-btn" data-action="unassign" data-building-type="${buildingTypeId}" 
+                      style="width: 22px; height: 22px; font-size: 12px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer; ${data.totalWorkers > 0 ? '' : 'visibility: hidden;'}">-</button>
+              <button class="worker-btn" data-action="assign" data-building-type="${buildingTypeId}"
+                      style="width: 22px; height: 22px; font-size: 12px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer; ${(data.totalWorkers < data.maxWorkers && city.availableWorkers > 0) ? '' : 'visibility: hidden;'}">+</button>
             </div>
           </div>
         </div>`;
