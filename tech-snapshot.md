@@ -13,6 +13,7 @@
 - **City founding mechanics** with transition from exploration to city management
 - **Building system** with 5 building types (hut, farm, shed, lumber_yard, quarry)
 - **Progressive building unlocks** - shed unlocks when wood storage is first maxed
+- **Terrain-based production bonuses** - buildings gain efficiency from adjacent terrain
 - **Worker assignment** and resource production systems
 - **Scaling costs** with exponential pricing for building upgrades
 - **Smooth movement animations** (300ms with easing)
@@ -67,6 +68,7 @@
 - Resource storage with capacity limits
 - Building construction and upgrades
 - Progressive building unlock system
+- Terrain-based production calculation system
 - Integrity and unrest tracking
 
 #### Data-Driven Design

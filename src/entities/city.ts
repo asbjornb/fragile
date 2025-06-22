@@ -1,5 +1,6 @@
-import { HexCoordinate } from '../core/hex';
+import { HexCoordinate, HexUtils } from '../core/hex';
 import buildingsData from '../data/buildings.json';
+import { WorldGenerator } from '../systems/worldgen';
 
 export interface City {
   id: string;
@@ -72,8 +73,10 @@ export class CitySystem {
   private city: City | null = null;
   private buildingTypes: Map<string, BuildingType> = new Map();
   private unlockedBuildings: Set<string> = new Set();
+  private worldGenerator: WorldGenerator;
 
-  constructor() {
+  constructor(worldGenerator: WorldGenerator) {
+    this.worldGenerator = worldGenerator;
     this.loadBuildingData();
     this.initializeUnlocks();
   }
@@ -164,6 +167,40 @@ export class CitySystem {
       this.unlockedBuildings.add('shed');
       console.log('🏚️ Shed unlocked! Wood storage was maxed out.');
     }
+  }
+
+  private getTerrainBonus(buildingType: string): number {
+    if (!this.city) return 0;
+
+    // Get adjacent hexes around the city
+    const neighbors = HexUtils.getNeighbors(this.city.position);
+    let bonusMultiplier = 0;
+
+    neighbors.forEach(neighborCoord => {
+      const tile = this.worldGenerator.getTile(neighborCoord);
+      if (!tile) return;
+
+      // Apply terrain bonuses based on building type
+      switch (buildingType) {
+        case 'lumber_yard':
+          if (tile.type.id === 'forest') {
+            bonusMultiplier += 0.10; // +10% per forest tile
+          }
+          break;
+        case 'quarry':
+          if (tile.type.id === 'hill') {
+            bonusMultiplier += 0.20; // +20% per hill tile
+          }
+          break;
+        case 'farm':
+          if (tile.type.id === 'plains') {
+            bonusMultiplier += 0.05; // +5% per plains tile
+          }
+          break;
+      }
+    });
+
+    return bonusMultiplier;
   }
 
   // Calculate current cost for a building type based on how many have been built
@@ -335,29 +372,34 @@ export class CitySystem {
       }
     }
 
-    // Building production (with workers)
+    // Building production (with workers and terrain bonuses)
     this.city.buildings.forEach(building => {
       const buildingType = this.buildingTypes.get(building.type);
       if (!buildingType || building.assignedWorkers === 0) return;
 
       const effects = buildingType.effects;
       const workerRatio = building.assignedWorkers / building.maxWorkers;
+      const terrainBonus = this.getTerrainBonus(building.type);
+      const productionMultiplier = 1 + terrainBonus;
 
       if (effects.foodPerTick) {
+        const production = Math.floor(effects.foodPerTick * workerRatio * building.level * productionMultiplier);
         this.city!.resources.food = Math.min(
-          this.city!.resources.food + Math.floor(effects.foodPerTick * workerRatio * building.level),
+          this.city!.resources.food + production,
           this.city!.storage.food
         );
       }
       if (effects.woodPerTick) {
+        const production = Math.floor(effects.woodPerTick * workerRatio * building.level * productionMultiplier);
         this.city!.resources.wood = Math.min(
-          this.city!.resources.wood + Math.floor(effects.woodPerTick * workerRatio * building.level),
+          this.city!.resources.wood + production,
           this.city!.storage.wood
         );
       }
       if (effects.stonePerTick) {
+        const production = Math.floor(effects.stonePerTick * workerRatio * building.level * productionMultiplier);
         this.city!.resources.stone = Math.min(
-          this.city!.resources.stone + Math.floor(effects.stonePerTick * workerRatio * building.level),
+          this.city!.resources.stone + production,
           this.city!.storage.stone
         );
       }

@@ -17,7 +17,7 @@ export class Game {
   constructor(container: HTMLElement) {
     this.renderer = new HexRenderer(container);
     this.settlerSystem = new SettlerSystem();
-    this.citySystem = new CitySystem();
+    this.citySystem = new CitySystem(this.renderer.getWorldGenerator());
     this.inputSystem = new InputSystem(
       this.renderer.getCanvas(),
       () => this.renderer.getCameraOffset()

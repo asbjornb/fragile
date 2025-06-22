@@ -665,6 +665,10 @@ export class HexRenderer {
     this.hexContainer.scale.set(this.zoomLevel);
   }
 
+  getWorldGenerator(): WorldGenerator {
+    return this.worldGenerator;
+  }
+
   animateZoom(targetZoom: number, duration: number = 800, onComplete?: () => void) {
     if (this.isAnimating) return;
     

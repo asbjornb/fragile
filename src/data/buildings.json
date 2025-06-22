@@ -32,7 +32,7 @@
         "scalingType": "exponential"
       },
       "effects": {
-        "foodPerTick": 3
+        "foodPerTick": 1
       },
       "requiresWorker": true,
       "requiresTerrain": ["plains"],
@@ -71,7 +71,7 @@
         "scalingType": "exponential"
       },
       "effects": {
-        "woodPerTick": 2
+        "woodPerTick": 1
       },
       "requiresWorker": true,
       "requiresTerrain": ["forest"],
@@ -92,7 +92,7 @@
         "scalingType": "exponential"
       },
       "effects": {
-        "stonePerTick": 2
+        "stonePerTick": 1
       },
       "requiresWorker": true,
       "requiresTerrain": ["hill", "mountain"],
