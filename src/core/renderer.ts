@@ -152,7 +152,8 @@ export class HexRenderer {
           if (!this.hexGraphics.has(key)) {
             const color = this.getHexColor(hex);
             this.renderHex(hex, color);
-            this.renderResourceNode(hex);
+            // TODO: Fix resource node rendering - currently has positioning bugs
+            // this.renderResourceNode(hex);
           }
           renderedHexes.add(key);
         }
@@ -340,22 +341,23 @@ export class HexRenderer {
     return this.app.view as HTMLCanvasElement;
   }
 
-  private renderResourceNode(hex: HexCoordinate) {
-    if (!this.visibilitySystem.isVisible(hex)) return;
-    
-    const tile = this.worldGenerator.generateTile(hex);
-    if (!tile.hasResource || !tile.resourceType) return;
-    
-    const { x, y } = HexUtils.hexToPixel(hex);
-    const resourceColor = parseInt(tile.resourceType.color.replace('#', ''), 16);
-    
-    const resourceGraphics = new PIXI.Graphics();
-    
-    // Draw resource with type-specific visualization
-    this.drawResourceIcon(resourceGraphics, x, y, tile.resourceType.id, resourceColor);
-    
-    this.hexContainer.addChild(resourceGraphics);
-  }
+  // TODO: Implement proper resource node rendering system
+  // private renderResourceNode(hex: HexCoordinate) {
+  //   if (!this.visibilitySystem.isVisible(hex)) return;
+  //   
+  //   const tile = this.worldGenerator.generateTile(hex);
+  //   if (!tile.hasResource || !tile.resourceType) return;
+  //   
+  //   const { x, y } = HexUtils.hexToPixel(hex);
+  //   const resourceColor = parseInt(tile.resourceType.color.replace('#', ''), 16);
+  //   
+  //   const resourceGraphics = new PIXI.Graphics();
+  //   
+  //   // Draw resource with type-specific visualization
+  //   this.drawResourceIcon(resourceGraphics, x, y, tile.resourceType.id, resourceColor);
+  //   
+  //   this.hexContainer.addChild(resourceGraphics);
+  // }
 
   getCameraOffset(): { x: number; y: number } {
     return { x: this.hexContainer.x, y: this.hexContainer.y };
@@ -482,102 +484,103 @@ export class HexRenderer {
     return (r << 16) | (g << 8) | b;
   }
   
-  private drawResourceIcon(graphics: PIXI.Graphics, x: number, y: number, resourceType: string, color: number) {
-    const size = HexUtils.HEX_SIZE * 0.15;
-    
-    switch (resourceType) {
-      case 'wood':
-        // Draw a tree-like symbol
-        graphics.beginFill(0x8B4513); // Tree trunk
-        graphics.drawRect(x - 2, y, 4, size);
-        graphics.endFill();
-        graphics.beginFill(color); // Tree foliage
-        graphics.drawCircle(x, y - size * 0.5, size * 0.8);
-        graphics.endFill();
-        // White outline for visibility
-        graphics.lineStyle(1, 0xffffff);
-        graphics.drawCircle(x, y - size * 0.5, size * 0.8);
-        break;
-        
-      case 'stone':
-        // Draw a rocky cube/crystal shape
-        graphics.beginFill(color);
-        graphics.lineStyle(1, 0xffffff);
-        graphics.drawPolygon([
-          x - size, y + size * 0.5,
-          x, y - size * 0.5,
-          x + size, y + size * 0.5,
-          x, y + size
-        ]);
-        graphics.endFill();
-        break;
-        
-      case 'ore':
-        // Draw pickaxe-like symbol
-        graphics.beginFill(color);
-        graphics.lineStyle(1, 0xffffff);
-        // Pickaxe head
-        graphics.drawPolygon([
-          x - size * 0.8, y - size * 0.3,
-          x + size * 0.8, y - size * 0.3,
-          x + size * 0.5, y + size * 0.3,
-          x - size * 0.5, y + size * 0.3
-        ]);
-        // Handle
-        graphics.lineStyle(2, 0x8B4513);
-        graphics.moveTo(x, y + size * 0.3);
-        graphics.lineTo(x, y + size * 0.8);
-        graphics.endFill();
-        break;
-        
-      case 'wild_game':
-        // Draw animal tracks or paw prints
-        graphics.beginFill(color);
-        graphics.lineStyle(1, 0xffffff);
-        // Main paw pad
-        graphics.drawEllipse(x, y, size * 0.6, size * 0.4);
-        // Toe pads
-        for (let i = 0; i < 4; i++) {
-          const angle = (Math.PI * 2 * i) / 4 - Math.PI / 2;
-          const padX = x + Math.cos(angle) * size * 0.8;
-          const padY = y + Math.sin(angle) * size * 0.6;
-          graphics.drawCircle(padX, padY, size * 0.2);
-        }
-        graphics.endFill();
-        break;
-        
-      case 'fish':
-        // Draw a fish symbol
-        graphics.beginFill(color);
-        graphics.lineStyle(1, 0xffffff);
-        // Fish body
-        graphics.drawEllipse(x, y, size * 0.8, size * 0.4);
-        // Fish tail
-        graphics.drawPolygon([
-          x + size * 0.8, y,
-          x + size * 1.2, y - size * 0.3,
-          x + size * 1.2, y + size * 0.3
-        ]);
-        graphics.endFill();
-        // Fish eye
-        graphics.beginFill(0xffffff);
-        graphics.drawCircle(x - size * 0.3, y, size * 0.1);
-        graphics.endFill();
-        break;
-        
-      default:
-        // Fallback to enhanced circle
-        graphics.beginFill(color);
-        graphics.lineStyle(2, 0xffffff);
-        graphics.drawCircle(x, y, size);
-        graphics.endFill();
-        // Add inner glow effect
-        graphics.beginFill(this.lightenColor(color, 0.5), 0.5);
-        graphics.drawCircle(x, y, size * 0.6);
-        graphics.endFill();
-        break;
-    }
-  }
+  // TODO: Implement proper resource node rendering system
+  // private drawResourceIcon(graphics: PIXI.Graphics, x: number, y: number, resourceType: string, color: number) {
+  //   const size = HexUtils.HEX_SIZE * 0.15;
+  //   
+  //   switch (resourceType) {
+  //     case 'wood':
+  //       // Draw a tree-like symbol
+  //       graphics.beginFill(0x8B4513); // Tree trunk
+  //       graphics.drawRect(x - 2, y, 4, size);
+  //       graphics.endFill();
+  //       graphics.beginFill(color); // Tree foliage
+  //       graphics.drawCircle(x, y - size * 0.5, size * 0.8);
+  //       graphics.endFill();
+  //       // White outline for visibility
+  //       graphics.lineStyle(1, 0xffffff);
+  //       graphics.drawCircle(x, y - size * 0.5, size * 0.8);
+  //       break;
+  //       
+  //     case 'stone':
+  //       // Draw a rocky cube/crystal shape
+  //       graphics.beginFill(color);
+  //       graphics.lineStyle(1, 0xffffff);
+  //       graphics.drawPolygon([
+  //         x - size, y + size * 0.5,
+  //         x, y - size * 0.5,
+  //         x + size, y + size * 0.5,
+  //         x, y + size
+  //       ]);
+  //       graphics.endFill();
+  //       break;
+  //       
+  //     case 'ore':
+  //       // Draw pickaxe-like symbol
+  //       graphics.beginFill(color);
+  //       graphics.lineStyle(1, 0xffffff);
+  //       // Pickaxe head
+  //       graphics.drawPolygon([
+  //         x - size * 0.8, y - size * 0.3,
+  //         x + size * 0.8, y - size * 0.3,
+  //         x + size * 0.5, y + size * 0.3,
+  //         x - size * 0.5, y + size * 0.3
+  //       ]);
+  //       // Handle
+  //       graphics.lineStyle(2, 0x8B4513);
+  //       graphics.moveTo(x, y + size * 0.3);
+  //       graphics.lineTo(x, y + size * 0.8);
+  //       graphics.endFill();
+  //       break;
+  //       
+  //     case 'wild_game':
+  //       // Draw animal tracks or paw prints
+  //       graphics.beginFill(color);
+  //       graphics.lineStyle(1, 0xffffff);
+  //       // Main paw pad
+  //       graphics.drawEllipse(x, y, size * 0.6, size * 0.4);
+  //       // Toe pads
+  //       for (let i = 0; i < 4; i++) {
+  //         const angle = (Math.PI * 2 * i) / 4 - Math.PI / 2;
+  //         const padX = x + Math.cos(angle) * size * 0.8;
+  //         const padY = y + Math.sin(angle) * size * 0.6;
+  //         graphics.drawCircle(padX, padY, size * 0.2);
+  //       }
+  //       graphics.endFill();
+  //       break;
+  //       
+  //     case 'fish':
+  //       // Draw a fish symbol
+  //       graphics.beginFill(color);
+  //       graphics.lineStyle(1, 0xffffff);
+  //       // Fish body
+  //       graphics.drawEllipse(x, y, size * 0.8, size * 0.4);
+  //       // Fish tail
+  //       graphics.drawPolygon([
+  //         x + size * 0.8, y,
+  //         x + size * 1.2, y - size * 0.3,
+  //         x + size * 1.2, y + size * 0.3
+  //       ]);
+  //       graphics.endFill();
+  //       // Fish eye
+  //       graphics.beginFill(0xffffff);
+  //       graphics.drawCircle(x - size * 0.3, y, size * 0.1);
+  //       graphics.endFill();
+  //       break;
+  //       
+  //     default:
+  //       // Fallback to enhanced circle
+  //       graphics.beginFill(color);
+  //       graphics.lineStyle(2, 0xffffff);
+  //       graphics.drawCircle(x, y, size);
+  //       graphics.endFill();
+  //       // Add inner glow effect
+  //       graphics.beginFill(this.lightenColor(color, 0.5), 0.5);
+  //       graphics.drawCircle(x, y, size * 0.6);
+  //       graphics.endFill();
+  //       break;
+  //   }
+  // }
   
   private drawSettlerSprite(graphics: PIXI.Graphics, x: number, y: number) {
     const size = HexUtils.HEX_SIZE * 0.35;

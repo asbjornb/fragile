@@ -17,6 +17,7 @@
 - ✅ Add terrain bonus display to city UI (moved to left sidebar Resources pane)
 - ✅ Clean up UI duplication between top bar and left sidebar
 - ✅ Include city center tile in terrain bonuses and make radius extensible
+- ✅ Remove broken resource node rendering (will implement properly later)
 
 ## In Progress / Pending
 
@@ -34,6 +35,7 @@
 ### Low Priority
 - ⏳ Add tech tree system
 - ⏳ Implement guard posts and watchtowers
+- ⏳ Implement proper resource node rendering system
 - ⏳ Add small powershell script to append all docs and copy to clipboard
 
 ---
