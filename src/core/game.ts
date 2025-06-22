@@ -147,14 +147,12 @@ export class Game {
     this.leftSidebar.style.position = 'fixed';
     this.leftSidebar.style.left = '0';
     this.leftSidebar.style.top = '0';
-    this.leftSidebar.style.bottom = '0';
+    this.leftSidebar.style.bottom = '80px'; // Leave space for bottom bar
     this.leftSidebar.style.width = '300px';
     this.leftSidebar.style.backgroundColor = '#2c3e50';
-    this.leftSidebar.style.borderRight = '2px solid #34495e';
-    this.leftSidebar.style.zIndex = '1000';
+    this.leftSidebar.style.zIndex = '900';
     this.leftSidebar.style.overflowY = 'auto';
     this.leftSidebar.style.padding = '15px';
-    this.leftSidebar.style.boxShadow = '2px 0 10px rgba(0,0,0,0.3)';
     this.leftSidebar.style.color = 'white';
 
     this.updateLeftSidebar();
@@ -311,17 +309,17 @@ export class Game {
     this.managementBar = document.createElement('div');
     this.managementBar.style.position = 'fixed';
     this.managementBar.style.bottom = '0';
-    this.managementBar.style.left = '300px'; // Account for left sidebar
+    this.managementBar.style.left = '0';
     this.managementBar.style.right = '0';
     this.managementBar.style.height = '80px';
     this.managementBar.style.backgroundColor = '#2c3e50';
-    this.managementBar.style.borderTop = '2px solid #34495e';
+    this.managementBar.style.borderTop = '1px solid #34495e';
     this.managementBar.style.display = 'flex';
     this.managementBar.style.alignItems = 'center';
-    this.managementBar.style.padding = '15px';
+    this.managementBar.style.justifyContent = 'center';
+    this.managementBar.style.padding = '15px 320px'; // Account for left and right panels
     this.managementBar.style.gap = '10px';
     this.managementBar.style.zIndex = '1000';
-    this.managementBar.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.3)';
 
     const availableBuildings = this.citySystem.getBuildingTypes();
     const buildButtons = availableBuildings.map(buildingType => {
@@ -477,20 +475,17 @@ export class Game {
     if (this.storyPanel) return; // Already exists
 
     this.storyPanel = document.createElement('div');
-    this.storyPanel.style.position = 'absolute';
-    this.storyPanel.style.top = '20px';
-    this.storyPanel.style.right = '20px';
+    this.storyPanel.style.position = 'fixed';
+    this.storyPanel.style.top = '0';
+    this.storyPanel.style.right = '0';
+    this.storyPanel.style.bottom = '80px'; // Leave space for bottom bar
     this.storyPanel.style.width = '320px';
-    this.storyPanel.style.height = 'calc(100vh - 40px)';
-    this.storyPanel.style.backgroundColor = 'rgba(46, 64, 83, 0.95)';
+    this.storyPanel.style.backgroundColor = '#2c3e50';
     this.storyPanel.style.color = '#ecf0f1';
-    this.storyPanel.style.borderRadius = '8px';
-    this.storyPanel.style.border = '2px solid #34495e';
     this.storyPanel.style.fontFamily = 'Arial, sans-serif';
     this.storyPanel.style.fontSize = '13px';
     this.storyPanel.style.lineHeight = '1.4';
-    this.storyPanel.style.zIndex = '1000';
-    this.storyPanel.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
+    this.storyPanel.style.zIndex = '900';
     this.storyPanel.style.display = 'flex';
     this.storyPanel.style.flexDirection = 'column';
 
