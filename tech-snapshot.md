@@ -15,6 +15,7 @@
 - **Progressive building unlocks** - shed unlocks when wood storage is first maxed
 - **Terrain-based production bonuses** - buildings gain efficiency from adjacent terrain
 - **Interactive terrain legend** - shows terrain types and bonuses during exploration phase
+- **Clean UI organization** - exploration shows food counter, city mode hides top bar and uses organized left sidebar
 - **Worker assignment** and resource production systems
 - **Scaling costs** with exponential pricing for building upgrades
 - **Smooth movement animations** (300ms with easing)

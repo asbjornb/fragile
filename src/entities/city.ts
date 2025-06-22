@@ -173,10 +173,10 @@ export class CitySystem {
     if (!this.city) return 0;
 
     // Get adjacent hexes around the city
-    const neighbors = HexUtils.getNeighbors(this.city.position);
+    const neighbors = HexUtils.hexNeighbors(this.city.position);
     let bonusMultiplier = 0;
 
-    neighbors.forEach(neighborCoord => {
+    neighbors.forEach((neighborCoord: HexCoordinate) => {
       const tile = this.worldGenerator.getTile(neighborCoord);
       if (!tile) return;
 

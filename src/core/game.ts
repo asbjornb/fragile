@@ -100,7 +100,7 @@ export class Game {
     
     // Animate zoom in to city view and then render city
     this.renderer.animateZoom(2.0, 1000, () => {
-      this.renderer.renderCity(city);
+      this.render(); // Use render method instead of renderCity directly
       this.updateUI();
       this.setupLeftSidebar();
       this.setupCityManagement();
@@ -114,15 +114,16 @@ export class Game {
     if (!this.settleButton) return;
     
     const hasCity = this.citySystem.hasCity();
-    this.settleButton.style.display = hasCity ? 'none' : 'block';
     
     if (hasCity) {
-      const city = this.citySystem.getCity()!;
-      // Update button or add city info display
-      this.settleButton.textContent = `${city.name} (Pop: ${city.population})`;
-      this.settleButton.style.backgroundColor = '#2196F3';
+      // Hide settle button completely when city exists
+      this.settleButton.style.display = 'none';
+    } else {
+      // Show settle button during exploration
       this.settleButton.style.display = 'block';
-      this.settleButton.style.cursor = 'default';
+      this.settleButton.textContent = 'Settle Here';
+      this.settleButton.style.backgroundColor = '#4CAF50';
+      this.settleButton.style.cursor = 'pointer';
     }
   }
 
@@ -154,11 +155,39 @@ export class Game {
     this.setupWorkerButtons();
   }
 
+  private getTerrainBonuses(cityPosition: HexCoordinate): { food: number; wood: number; stone: number } {
+    const neighbors = HexUtils.hexNeighbors(cityPosition);
+    let bonuses = { food: 0, wood: 0, stone: 0 };
+
+    neighbors.forEach((neighborCoord: HexCoordinate) => {
+      const tile = this.renderer.getWorldGenerator().getTile(neighborCoord);
+      if (!tile) return;
+
+      switch (tile.type.id) {
+        case 'plains':
+          bonuses.food += 5; // +5% per plains
+          break;
+        case 'forest':
+          bonuses.wood += 10; // +10% per forest
+          break;
+        case 'hill':
+        case 'mountain':
+          bonuses.stone += 20; // +20% per hill/mountain
+          break;
+      }
+    });
+
+    return bonuses;
+  }
+
   private updateLeftSidebar() {
     if (!this.leftSidebar) return;
     
     const city = this.citySystem.getCity();
     if (!city) return;
+
+    // Get terrain bonuses
+    const bonuses = this.getTerrainBonuses(city.position);
 
     // Group buildings by type and count them
     const buildingCounts = new Map<string, { count: number; totalWorkers: number; maxWorkers: number; buildingType: any }>();
@@ -217,9 +246,9 @@ export class Game {
       <div style="margin-bottom: 20px; padding: 10px; background: #34495e; border-radius: 6px;">
         <h3 style="margin: 0 0 10px 0; font-size: 16px;">💰 Resources</h3>
         <div style="font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-          <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span></div>
-          <div>Wood: <span style="color: #8b4513; font-weight: bold;">${city.resources.wood}/${city.storage.wood}</span></div>
-          <div>Stone: <span style="color: #95a5a6; font-weight: bold;">${city.resources.stone}/${city.storage.stone}</span></div>
+          <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span>${bonuses.food > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.food}%)</span>` : ''}</div>
+          <div>Wood: <span style="color: #8b4513; font-weight: bold;">${city.resources.wood}/${city.storage.wood}</span>${bonuses.wood > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.wood}%)</span>` : ''}</div>
+          <div>Stone: <span style="color: #95a5a6; font-weight: bold;">${city.resources.stone}/${city.storage.stone}</span>${bonuses.stone > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.stone}%)</span>` : ''}</div>
           <div>Research: <span style="color: #9b59b6; font-weight: bold;">${city.resources.research}</span></div>
         </div>
       </div>
@@ -375,6 +404,12 @@ export class Game {
       if (this.citySystem.hasCity()) {
         this.citySystem.generateResources();
         this.refreshManagementBar();
+        this.updateLeftSidebar(); // Update sidebar with terrain bonuses
+        this.setupWorkerButtons(); // Re-setup event listeners after innerHTML update
+        
+        // Update city UI with current resources 
+        const city = this.citySystem.getCity()!;
+        this.renderer.updateCityUI(city);
       }
     }, 2000);
   }

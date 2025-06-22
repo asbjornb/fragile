@@ -69,7 +69,7 @@ export class HexRenderer {
     });
 
     this.foodText = new PIXI.Text('Food: 20', style);
-    this.foodText.x = this.app.screen.width - 120;
+    this.foodText.x = this.app.screen.width - 350; // Adjusted for shorter text
     this.foodText.y = 20;
     
     this.uiContainer.addChild(this.foodText);
@@ -121,8 +121,8 @@ export class HexRenderer {
       label.x = this.app.screen.width - 115;
       label.y = terrain.y - 8;
       
-      this.terrainLegend.addChild(circle);
-      this.terrainLegend.addChild(label);
+      this.terrainLegend!.addChild(circle);
+      this.terrainLegend!.addChild(label);
     });
 
     this.uiContainer.addChild(this.terrainLegend);
@@ -332,6 +332,7 @@ export class HexRenderer {
     // Update food display
     if (this.foodText) {
       this.foodText.text = `Food: ${settler.food}`;
+      this.foodText.visible = true; // Make sure it's visible during exploration
     }
   }
 
@@ -653,10 +654,8 @@ export class HexRenderer {
 
     this.hexContainer.addChild(this.cityGraphics);
     
-    // Update UI with city resources instead of food
-    if (this.foodText) {
-      this.foodText.text = `${city.name} - Pop: ${city.population} | Food: ${city.resources.food}`;
-    }
+    // Update UI with city resources and terrain bonuses
+    this.updateCityUI(city);
     
     // Hide terrain legend once city is founded
     if (this.terrainLegend) {
@@ -727,6 +726,14 @@ export class HexRenderer {
 
   getWorldGenerator(): WorldGenerator {
     return this.worldGenerator;
+  }
+
+
+  updateCityUI(_city: City) {
+    if (this.foodText) {
+      // Hide the top bar info during city mode since it's all in the left sidebar
+      this.foodText.visible = false;
+    }
   }
 
   animateZoom(targetZoom: number, duration: number = 800, onComplete?: () => void) {

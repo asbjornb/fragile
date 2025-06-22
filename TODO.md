@@ -14,6 +14,8 @@
 - ✅ Implement worker assignment system
 - ✅ Add resource storage and scaling costs
 - ✅ Implement terrain legend with production bonuses
+- ✅ Add terrain bonus display to city UI (moved to left sidebar Resources pane)
+- ✅ Clean up UI duplication between top bar and left sidebar
 
 ## In Progress / Pending
 
