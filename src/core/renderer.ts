@@ -14,6 +14,7 @@ export class HexRenderer {
   private cityGraphics?: PIXI.Graphics;
   private uiContainer: PIXI.Container;
   private foodText?: PIXI.Text;
+  private terrainLegend?: PIXI.Container;
   private isAnimating: boolean = false;
   private worldGenerator: WorldGenerator;
   private zoomLevel: number = 1.0;
@@ -72,6 +73,59 @@ export class HexRenderer {
     this.foodText.y = 20;
     
     this.uiContainer.addChild(this.foodText);
+    
+    // Create terrain legend (visible only during exploration phase)
+    this.createTerrainLegend();
+  }
+
+  private createTerrainLegend() {
+    this.terrainLegend = new PIXI.Container();
+    
+    const legendStyle = new PIXI.TextStyle({
+      fontFamily: 'Arial',
+      fontSize: 14,
+      fill: 0xffffff,
+      align: 'left'
+    });
+
+    const legendTitle = new PIXI.Text('Terrain Types:', legendStyle);
+    legendTitle.x = this.app.screen.width - 140;
+    legendTitle.y = 60;
+    this.terrainLegend.addChild(legendTitle);
+
+    // Terrain data with colors from tiles.json
+    const terrainInfo = [
+      { name: 'Plains', color: 0x9ACD32, bonus: '+5% food', y: 85 },
+      { name: 'Forest', color: 0x228B22, bonus: '+10% wood', y: 110 },
+      { name: 'Hills', color: 0xDAA520, bonus: '+20% stone', y: 135 },
+      { name: 'Mountain', color: 0x708090, bonus: '+20% stone', y: 160 },
+      { name: 'River', color: 0x00BFFF, bonus: 'water source', y: 185 },
+      { name: 'Lake', color: 0x1E90FF, bonus: 'water source', y: 210 }
+    ];
+
+    terrainInfo.forEach(terrain => {
+      // Create colored circle for terrain type
+      const circle = new PIXI.Graphics();
+      circle.beginFill(terrain.color);
+      circle.drawCircle(0, 0, 8);
+      circle.endFill();
+      circle.x = this.app.screen.width - 130;
+      circle.y = terrain.y;
+      
+      // Create text label
+      const label = new PIXI.Text(`${terrain.name} (${terrain.bonus})`, {
+        fontFamily: 'Arial',
+        fontSize: 12,
+        fill: 0xffffff
+      });
+      label.x = this.app.screen.width - 115;
+      label.y = terrain.y - 8;
+      
+      this.terrainLegend.addChild(circle);
+      this.terrainLegend.addChild(label);
+    });
+
+    this.uiContainer.addChild(this.terrainLegend);
   }
 
   private renderInitialGrid() {
@@ -602,6 +656,12 @@ export class HexRenderer {
     // Update UI with city resources instead of food
     if (this.foodText) {
       this.foodText.text = `${city.name} - Pop: ${city.population} | Food: ${city.resources.food}`;
+    }
+    
+    // Hide terrain legend once city is founded
+    if (this.terrainLegend) {
+      this.uiContainer.removeChild(this.terrainLegend);
+      this.terrainLegend = undefined;
     }
   }
 
