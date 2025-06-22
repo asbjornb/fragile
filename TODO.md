@@ -13,6 +13,7 @@
 - ✅ Create basic building system (hut, farm, shed, lumber_yard, quarry)
 - ✅ Implement worker assignment system
 - ✅ Add resource storage and scaling costs
+- ✅ Implement terrain legend with production bonuses
 
 ## In Progress / Pending
 
@@ -29,6 +30,7 @@
 ### Low Priority
 - ⏳ Add tech tree system
 - ⏳ Implement guard posts and watchtowers
+- ⏳ Add small powershell script to append all docs and copy to clipboard
 
 ---
 
