@@ -50,7 +50,8 @@ export class StorySystem {
       'shed': 'Your wood stores are overflowing! The settlement\'s carpenter suggests building a shed to properly store the surplus timber.',
       'lumber_yard': 'With growing construction needs, the village elders propose establishing a proper lumber yard to organize wood production.',
       'quarry': 'Stone deposits have been discovered nearby. The miners are eager to establish a quarry to extract this valuable resource.',
-      'farm': 'The fertile soil calls for cultivation. Your people are ready to establish proper farmland to secure the settlement\'s food supply.'
+      'farm': 'The fertile soil calls for cultivation. Your people are ready to establish proper farmland to secure the settlement\'s food supply.',
+      'library': 'Your settlement has grown into a proper community! The wisest citizens propose establishing a library to preserve knowledge and advance learning.'
     };
     
     const message = messages[buildingName as keyof typeof messages] || `The settlement has discovered new construction techniques. ${buildingName} is now available to build.`;

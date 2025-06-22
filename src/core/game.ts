@@ -310,21 +310,23 @@ export class Game {
           <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span>${bonuses.food > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.food}%)</span>` : ''}</div>
           <div>Wood: <span style="color: #8b4513; font-weight: bold;">${city.resources.wood}/${city.storage.wood}</span>${bonuses.wood > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.wood}%)</span>` : ''}</div>
           <div>Stone: <span style="color: #95a5a6; font-weight: bold;">${city.resources.stone}/${city.storage.stone}</span>${bonuses.stone > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.stone}%)</span>` : ''}</div>
-          <div>Research: <span style="color: #9b59b6; font-weight: bold;">${city.resources.research}</span></div>
+          ${this.citySystem.hasResearchBuilding() ? `<div>Research: <span style="color: #9b59b6; font-weight: bold;">${city.resources.research}</span></div>` : ''}
         </div>
       </div>
 
-      <div style="margin-bottom: 20px;">
-        <div style="padding: 10px; background: #34495e; border-radius: 6px;">
-          <h3 style="margin: 0 0 10px 0; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('span').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';">
-            🔬 Research Technologies
-            <span style="font-size: 12px;">▼</span>
-          </h3>
-          <div style="display: none;">
-            ${this.getResearchedTechsHTML()}
+      ${this.citySystem.hasResearchBuilding() ? `
+        <div style="margin-bottom: 20px;">
+          <div style="padding: 10px; background: #34495e; border-radius: 6px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('span').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';">
+              🔬 Research Technologies
+              <span style="font-size: 12px;">▼</span>
+            </h3>
+            <div style="display: none;">
+              ${this.getResearchedTechsHTML()}
+            </div>
           </div>
         </div>
-      </div>
+      ` : ''}
 
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -393,18 +395,25 @@ export class Game {
     buildingsTab.style.borderRight = '1px solid #2c3e50';
     buildingsTab.addEventListener('click', () => this.switchTab('buildings'));
     
-    // Research tab
-    const researchTab = document.createElement('button');
-    researchTab.textContent = '🔬 Research';
-    researchTab.style.padding = '8px 20px';
-    researchTab.style.border = 'none';
-    researchTab.style.backgroundColor = this.currentTab === 'research' ? '#2c3e50' : '#34495e';
-    researchTab.style.color = 'white';
-    researchTab.style.cursor = 'pointer';
-    researchTab.addEventListener('click', () => this.switchTab('research'));
-    
     tabHeader.appendChild(buildingsTab);
-    tabHeader.appendChild(researchTab);
+    
+    // Research tab - only show if research building exists
+    if (this.citySystem.hasResearchBuilding()) {
+      const researchTab = document.createElement('button');
+      researchTab.textContent = '🔬 Research';
+      researchTab.style.padding = '8px 20px';
+      researchTab.style.border = 'none';
+      researchTab.style.backgroundColor = this.currentTab === 'research' ? '#2c3e50' : '#34495e';
+      researchTab.style.color = 'white';
+      researchTab.style.cursor = 'pointer';
+      researchTab.addEventListener('click', () => this.switchTab('research'));
+      tabHeader.appendChild(researchTab);
+    } else {
+      // If no research building and we're on research tab, switch to buildings
+      if (this.currentTab === 'research') {
+        this.currentTab = 'buildings';
+      }
+    }
 
     // Create content area
     const contentArea = document.createElement('div');
@@ -450,8 +459,12 @@ export class Game {
 
     if (this.currentTab === 'buildings') {
       this.renderBuildingsTab(contentArea);
-    } else {
+    } else if (this.currentTab === 'research' && this.citySystem.hasResearchBuilding()) {
       this.renderResearchTab(contentArea);
+    } else {
+      // Fallback to buildings if research tab is selected but no research building
+      this.currentTab = 'buildings';
+      this.renderBuildingsTab(contentArea);
     }
   }
 
@@ -702,8 +715,22 @@ export class Game {
     this.updateLeftSidebar();
     this.setupWorkerButtons();
     
-    // Refresh tab content instead of recreating the entire bar
-    this.updateTabContent();
+    // Check if research building status has changed and recreate tabs if needed
+    const hasResearchBuilding = this.citySystem.hasResearchBuilding();
+    const currentTabs = this.managementBar?.querySelectorAll('button').length || 0;
+    const expectedTabs = hasResearchBuilding ? 2 : 1;
+    
+    if (currentTabs !== expectedTabs) {
+      // Research building status changed, recreate the entire management bar
+      if (this.managementBar) {
+        document.body.removeChild(this.managementBar);
+        this.managementBar = null;
+        this.setupCityManagement();
+      }
+    } else {
+      // Just refresh tab content
+      this.updateTabContent();
+    }
   }
 
   private startGameTick() {
@@ -857,6 +884,7 @@ export class Game {
       'building_lumber_yard': 'Industrial Progress',
       'building_quarry': 'Mining Operations',
       'building_farm': 'Agricultural Development',
+      'building_library': 'Age of Learning',
       'pop_2': 'New Arrivals',
       'pop_5': 'Growing Community',
       'pop_10': 'Thriving Village'

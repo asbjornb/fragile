@@ -99,6 +99,27 @@
       "buildTime": 3,
       "maxLevel": 3,
       "icon": "⛏️"
+    },
+    "library": {
+      "id": "library",
+      "name": "Library",
+      "description": "Generates research points with 1 scholar assigned",
+      "baseCost": {
+        "wood": 15,
+        "stone": 10,
+        "food": 5
+      },
+      "pricing": {
+        "scalingFactor": 1.25,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "researchPerTick": 1
+      },
+      "requiresWorker": true,
+      "buildTime": 4,
+      "maxLevel": 3,
+      "icon": "📚"
     }
   }
 }

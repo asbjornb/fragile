@@ -89,6 +89,7 @@ export class CitySystem {
     this.unlockedBuildings.add('lumber_yard');
     this.unlockedBuildings.add('quarry');
     // shed is unlocked later when wood storage is maxed
+    // library is unlocked when population reaches 10
   }
 
   private loadBuildingData() {
@@ -173,10 +174,26 @@ export class CitySystem {
         this.storyCallback('shed');
       }
     }
+
+    // Unlock library when population reaches 10
+    if (!this.unlockedBuildings.has('library') && this.city.population >= 10) {
+      this.unlockedBuildings.add('library');
+      console.log('📚 Library unlocked! Your settlement has grown large enough to support scholarly pursuits.');
+      
+      // Trigger story message
+      if (this.storyCallback) {
+        this.storyCallback('library');
+      }
+    }
   }
 
   setStoryCallback(callback: (buildingName: string) => void): void {
     this.storyCallback = callback;
+  }
+
+  hasResearchBuilding(): boolean {
+    if (!this.city) return false;
+    return this.city.buildings.some(building => building.type === 'library');
   }
 
   private getTerrainBonusRadius(): number {
@@ -438,6 +455,10 @@ export class CitySystem {
           this.city!.resources.stone + production,
           this.city!.storage.stone
         );
+      }
+      if (effects.researchPerTick) {
+        const production = Math.floor(effects.researchPerTick * workerRatio * building.level);
+        this.city!.resources.research += production; // Research has no storage limit
       }
     });
   }
