@@ -25,6 +25,9 @@
       "Bash(grep:*)",
       "Bash(npm run typecheck:*)",
       "Bash(chmod:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }
