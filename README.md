@@ -28,6 +28,15 @@ npm install
 npm run dev
 ```
 
+### Pre-commit Hook
+
+A pre-commit hook automatically runs `npm run build` before each commit to catch TypeScript errors and prevent broken builds from being committed.
+
+To bypass the hook (not recommended):
+```bash
+git commit --no-verify
+```
+
 ## Testing
 
 ```bash

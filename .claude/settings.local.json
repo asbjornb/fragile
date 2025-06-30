@@ -22,7 +22,9 @@
       "Bash(find:*)",
       "Bash(git add:*)",
       "Bash(rg:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }
