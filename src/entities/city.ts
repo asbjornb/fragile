@@ -58,6 +58,7 @@ export interface BuildingType {
     foodPerTick?: number;
     woodPerTick?: number;
     stonePerTick?: number;
+    researchPerTick?: number;
     woodStorage?: number;
     stoneStorage?: number;
     foodStorage?: number;

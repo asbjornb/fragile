@@ -775,7 +775,7 @@ export class Game {
 
   private setupStorySystem() {
     // Listen for new story messages and update the UI
-    this.storySystem.onMessage((message) => {
+    this.storySystem.onMessage(() => {
       this.updateStoryPanel();
     });
 
