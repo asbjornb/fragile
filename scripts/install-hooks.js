@@ -10,14 +10,30 @@ const hookContent = `#!/bin/sh
 
 echo "Running pre-commit build check..."
 
-# Run the build
+# Try to run the build first
 npm run build
 
-# Check if build succeeded
+# If build fails with esbuild platform error, try to fix it
 if [ $? -ne 0 ]; then
-    echo "❌ Build failed! Commit aborted."
-    echo "Fix the build errors and try again."
-    exit 1
+    echo "Build failed, checking if it's an esbuild platform issue..."
+    
+    # Check if the error mentions esbuild platform mismatch
+    npm run build 2>&1 | grep -q "esbuild.*platform"
+    if [ $? -eq 0 ]; then
+        echo "🔧 Detected esbuild platform mismatch, rebuilding esbuild..."
+        npm rebuild esbuild
+        
+        # Try build again after rebuilding esbuild
+        echo "Retrying build after esbuild rebuild..."
+        npm run build
+    fi
+    
+    # Final check
+    if [ $? -ne 0 ]; then
+        echo "❌ Build failed! Commit aborted."
+        echo "Fix the build errors and try again."
+        exit 1
+    fi
 fi
 
 echo "✅ Build succeeded!"
