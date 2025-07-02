@@ -28,6 +28,10 @@ npm install
 npm run dev
 ```
 
+**Cross-Platform Note**: If using WSL + Windows, don't share the same project folder between them due to conflicting `node_modules` binaries. Either:
+- Work entirely in WSL (recommended): `git clone` inside WSL at `~/code/fragile`
+- Or keep separate copies of the project in each environment
+
 ### Pre-commit Hook (Optional)
 
 Install a pre-commit hook that runs `npm run build` before each commit to catch TypeScript errors:
