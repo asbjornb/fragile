@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "npx playwright test",
     "test:ui": "npx playwright test --ui",
-    "test:install": "npx playwright install"
+    "test:install": "npx playwright install",
+    "setup-hooks": "node scripts/install-hooks.js"
   },
   "dependencies": {
     "pixi.js": "^7.4.2",
