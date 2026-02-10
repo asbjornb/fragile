@@ -430,12 +430,14 @@ export class Game {
       </div>
     `;
 
-    // Restore scroll positions after innerHTML replacement
-    this.leftSidebar.scrollTop = sidebarScrollTop;
-    const newBuildingsContainer = this.leftSidebar.querySelector('[data-scroll-id="buildings-list"]') as HTMLElement | null;
-    if (newBuildingsContainer) {
-      newBuildingsContainer.scrollTop = buildingsScrollTop;
-    }
+    // Restore scroll positions after browser lays out new content
+    requestAnimationFrame(() => {
+      this.leftSidebar!.scrollTop = sidebarScrollTop;
+      const newBuildingsContainer = this.leftSidebar!.querySelector('[data-scroll-id="buildings-list"]') as HTMLElement | null;
+      if (newBuildingsContainer) {
+        newBuildingsContainer.scrollTop = buildingsScrollTop;
+      }
+    });
 
     // Add mobile close button after innerHTML update
     if (this.isMobile()) {
@@ -581,8 +583,10 @@ export class Game {
       this.renderBuildingsTab(contentArea);
     }
 
-    // Restore horizontal scroll position after content is rebuilt
-    contentArea.scrollLeft = scrollLeft;
+    // Restore horizontal scroll position after browser lays out new content
+    requestAnimationFrame(() => {
+      contentArea.scrollLeft = scrollLeft;
+    });
   }
 
   private renderBuildingsTab(contentArea: HTMLElement) {
@@ -1012,12 +1016,14 @@ export class Game {
 
     messagesContainer.innerHTML = messagesHTML;
 
-    // Only auto-scroll to bottom if user was already near the bottom
-    if (wasNearBottom) {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    } else {
-      messagesContainer.scrollTop = previousScrollTop;
-    }
+    // Restore scroll position after browser lays out new content
+    requestAnimationFrame(() => {
+      if (wasNearBottom) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      } else {
+        messagesContainer.scrollTop = previousScrollTop;
+      }
+    });
   }
 
   private getTimeAgo(timestamp: number): string {
