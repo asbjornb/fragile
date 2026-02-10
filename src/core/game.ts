@@ -20,6 +20,7 @@ export class Game {
   private storyPanel: HTMLDivElement | null = null;
   private gameTickInterval: number | null = null;
   private currentTab: 'buildings' | 'research' = 'buildings';
+  private mobileToggles: HTMLDivElement | null = null;
 
   constructor(container: HTMLElement) {
     this.renderer = new HexRenderer(container);
@@ -89,7 +90,12 @@ export class Game {
     this.settleButton.style.borderRadius = '4px';
     this.settleButton.style.cursor = 'pointer';
     this.settleButton.style.fontSize = '14px';
-    
+
+    if (this.isMobile()) {
+      this.settleButton.style.padding = '12px 24px';
+      this.settleButton.style.fontSize = '18px';
+    }
+
     this.settleButton.addEventListener('click', () => this.settleCity());
     
     this.settlementUI.appendChild(this.settleButton);
@@ -119,6 +125,7 @@ export class Game {
       this.setupLeftSidebar();
       this.setupCityManagement();
       this.setupStoryPanel();
+      this.setupMobileToggles();
       this.startGameTick();
     });
     
@@ -181,6 +188,11 @@ export class Game {
     this.leftSidebar.style.overflowY = 'auto';
     this.leftSidebar.style.padding = '15px';
     this.leftSidebar.style.color = 'white';
+
+    if (this.isMobile()) {
+      this.leftSidebar.style.width = '100%';
+      this.leftSidebar.style.display = 'none';
+    }
 
     this.updateLeftSidebar();
     document.body.appendChild(this.leftSidebar);
@@ -338,6 +350,15 @@ export class Game {
         </div>
       </div>
     `;
+
+    // Add mobile close button after innerHTML update
+    if (this.isMobile()) {
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = '\u2715 Close';
+      closeBtn.style.cssText = 'position: sticky; top: 0; z-index: 1; width: 100%; padding: 12px; font-size: 16px; background: #e74c3c; color: white; border: none; cursor: pointer; margin-bottom: 10px; border-radius: 4px;';
+      closeBtn.addEventListener('click', () => this.toggleLeftSidebar());
+      this.leftSidebar.insertBefore(closeBtn, this.leftSidebar.firstChild);
+    }
   }
 
   private getResearchedTechsHTML(): string {
@@ -421,8 +442,12 @@ export class Game {
     contentArea.style.display = 'flex';
     contentArea.style.alignItems = 'center';
     contentArea.style.justifyContent = 'center';
-    contentArea.style.padding = '10px 320px'; // Account for left and right panels
+    contentArea.style.padding = this.isMobile() ? '10px 15px' : '10px 320px';
     contentArea.style.gap = '10px';
+    contentArea.style.overflowX = 'auto';
+    if (this.isMobile()) {
+      contentArea.style.justifyContent = 'flex-start';
+    }
     contentArea.id = 'management-content';
 
     this.managementBar.appendChild(tabHeader);
@@ -803,6 +828,12 @@ export class Game {
     this.storyPanel.style.display = 'flex';
     this.storyPanel.style.flexDirection = 'column';
 
+    if (this.isMobile()) {
+      this.storyPanel.style.width = '100%';
+      this.storyPanel.style.left = '0';
+      this.storyPanel.style.display = 'none';
+    }
+
     // Header
     const header = document.createElement('div');
     header.style.padding = '15px 15px 10px 15px';
@@ -810,6 +841,17 @@ export class Game {
     header.style.fontWeight = 'bold';
     header.style.color = '#f39c12';
     header.innerHTML = '📖 Settlement Chronicle';
+
+    if (this.isMobile()) {
+      header.style.display = 'flex';
+      header.style.justifyContent = 'space-between';
+      header.style.alignItems = 'center';
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = '\u2715';
+      closeBtn.style.cssText = 'padding: 6px 10px; font-size: 16px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;';
+      closeBtn.addEventListener('click', () => this.toggleStoryPanel());
+      header.appendChild(closeBtn);
+    }
 
     // Messages container (scrollable)
     const messagesContainer = document.createElement('div');
@@ -893,6 +935,51 @@ export class Game {
     return titles[messageId] || 'Settlement News';
   }
 
+  private isMobile(): boolean {
+    return window.innerWidth < 768;
+  }
+
+  private setupMobileToggles() {
+    if (!this.isMobile() || this.mobileToggles) return;
+
+    this.mobileToggles = document.createElement('div');
+    this.mobileToggles.style.cssText = 'position: fixed; top: 10px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 10px; z-index: 950; pointer-events: none;';
+
+    const btnStyle = 'pointer-events: auto; padding: 10px 14px; font-size: 16px; background: rgba(44, 62, 80, 0.9); color: white; border: 1px solid #34495e; border-radius: 8px; cursor: pointer;';
+
+    const leftBtn = document.createElement('button');
+    leftBtn.textContent = '\u{1F4CA} City';
+    leftBtn.style.cssText = btnStyle;
+    leftBtn.addEventListener('click', () => this.toggleLeftSidebar());
+
+    const rightBtn = document.createElement('button');
+    rightBtn.textContent = '\u{1F4D6} Story';
+    rightBtn.style.cssText = btnStyle;
+    rightBtn.addEventListener('click', () => this.toggleStoryPanel());
+
+    this.mobileToggles.appendChild(leftBtn);
+    this.mobileToggles.appendChild(rightBtn);
+    document.body.appendChild(this.mobileToggles);
+  }
+
+  private toggleLeftSidebar() {
+    if (!this.leftSidebar) return;
+    const isVisible = this.leftSidebar.style.display !== 'none';
+    this.leftSidebar.style.display = isVisible ? 'none' : 'block';
+    if (!isVisible && this.storyPanel) {
+      this.storyPanel.style.display = 'none';
+    }
+  }
+
+  private toggleStoryPanel() {
+    if (!this.storyPanel) return;
+    const isVisible = this.storyPanel.style.display !== 'none';
+    this.storyPanel.style.display = isVisible ? 'none' : 'flex';
+    if (!isVisible && this.leftSidebar) {
+      this.leftSidebar.style.display = 'none';
+    }
+  }
+
   destroy() {
     this.inputSystem.destroy();
     this.renderer.destroy();
@@ -919,6 +1006,12 @@ export class Game {
     if (this.storyPanel) {
       document.body.removeChild(this.storyPanel);
       this.storyPanel = null;
+    }
+
+    // Clean up mobile toggles
+    if (this.mobileToggles) {
+      document.body.removeChild(this.mobileToggles);
+      this.mobileToggles = null;
     }
     
     // Clean up settlement UI
