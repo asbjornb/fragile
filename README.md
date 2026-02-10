@@ -2,6 +2,8 @@
 
 An incremental rogue-civilization browser game where civilizations rise and inevitably fall.
 
+**Play now:** [fragile.pages.dev](https://fragile.pages.dev)
+
 ## Overview
 
 Control a lone settler exploring a fog-covered world, found a city, manage resources, and survive as long as possible before inevitable collapse. Each run leaves ruins that affect future playthroughs.
