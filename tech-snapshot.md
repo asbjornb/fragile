@@ -11,8 +11,8 @@
 - **Fog-of-war system** with visibility and exploration tracking
 - **Resource management** with food consumption (20 starting food, -1 per move)
 - **City founding mechanics** with transition from exploration to city management
-- **Building system** with 5 building types (hut, farm, shed, lumber_yard, quarry)
-- **Progressive building unlocks** - shed unlocks when wood storage is first maxed
+- **Building system** with 8 building types (hut, farm, shed, lumber_yard, quarry, library, granary, warehouse, hunters_lodge)
+- **Progressive building unlocks** - storage buildings unlock when respective resource is maxed, library at population 10, hunter's lodge via Hunting tech
 - **Terrain-based production bonuses** - buildings gain efficiency from terrain within radius (includes city center)
 - **Interactive terrain legend** - shows terrain types and production bonuses during exploration phase
 - **Clean UI organization** - exploration shows food counter, city mode hides top bar and uses organized left sidebar
@@ -79,8 +79,10 @@
 - Population and worker management
 - Resource storage with capacity limits
 - Building construction and upgrades
-- Progressive building unlock system
+- Progressive building unlock system (resource-based, population-based, and tech-based)
 - Terrain-based production calculation system
+- Tech effects applied to production (worker efficiency, food/stone bonuses) and building costs (cost reduction)
+- Food consumption per population per tick (ceil(pop/3), reduced by Preservation tech)
 - Integrity and unrest tracking
 
 #### Data-Driven Design
@@ -97,14 +99,19 @@
 **Building Configuration** (`src/data/buildings.json`)
 ```json
 {
-  "hut": { 
-    "baseCost": { "wood": 8, "food": 2 },
-    "effects": { "populationCapacity": 2 },
-    "pricing": { "scalingFactor": 1.10, "scalingType": "exponential" }
-  },
+  "hut": { "baseCost": { "wood": 8, "food": 2 }, "effects": { "populationCapacity": 2 } },
+  "farm": { "baseCost": { "wood": 5, "stone": 2 }, "effects": { "foodPerTick": 1 }, "requiresTerrain": ["plains"] },
+  "granary": { "baseCost": { "wood": 12, "stone": 5 }, "effects": { "foodStorage": 20 } },
+  "warehouse": { "baseCost": { "wood": 15, "stone": 8 }, "effects": { "stoneStorage": 15 } },
+  "hunters_lodge": { "baseCost": { "wood": 10, "food": 3 }, "effects": { "foodPerTick": 1 }, "requiresTerrain": ["forest", "plains"] }
   // ... etc
 }
 ```
+
+**Tech Configuration** (`src/data/techs.json`)
+- 9 technologies across 3 branches: Tools, Agriculture, Construction
+- Tech effects: workerEfficiency, foodProduction, stoneProduction, buildingCostReduction, foodConsumptionReduction
+- Tech-based building unlocks (e.g., Hunting tech unlocks Hunter's Lodge)
 
 **Procedural Generation**
 - Deterministic seeded random using coordinate hashing
@@ -191,13 +198,13 @@ npm run test     # Run Playwright tests
 
 1. **No dynamic events** - No bandit raids, harsh winters, or unrest mechanics
 2. **Memory growth** - Generated tiles never cleaned up
-3. **Tech effects not applied** - Researched techs don't modify production yet
+3. **Ore/fish unused** - Defined in tiles but not yet consumed by any building or mechanic
 
 ## Next Planned Features
-1. Add more content (buildings, techs, resources)
-2. Implement unrest and collapse mechanics
-3. Add dynamic events (bandit raids, harsh winters)
-4. Create legacy/prestige system
+1. Implement unrest and collapse mechanics
+2. Add dynamic events (bandit raids, harsh winters)
+3. Create legacy/prestige system
+4. Add more content (buildings using ore, defense buildings)
 
 ---
 

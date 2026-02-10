@@ -46,16 +46,36 @@ export class StorySystem {
   }
 
   buildingUnlocked(buildingName: string) {
-    const messages = {
+    const messages: Record<string, string> = {
       'shed': 'Your wood stores are overflowing! The settlement\'s carpenter suggests building a shed to properly store the surplus timber.',
       'lumber_yard': 'With growing construction needs, the village elders propose establishing a proper lumber yard to organize wood production.',
       'quarry': 'Stone deposits have been discovered nearby. The miners are eager to establish a quarry to extract this valuable resource.',
       'farm': 'The fertile soil calls for cultivation. Your people are ready to establish proper farmland to secure the settlement\'s food supply.',
-      'library': 'Your settlement has grown into a proper community! The wisest citizens propose establishing a library to preserve knowledge and advance learning.'
+      'library': 'Your settlement has grown into a proper community! The wisest citizens propose establishing a library to preserve knowledge and advance learning.',
+      'granary': 'Food is going to waste! The elders propose building a granary to preserve your harvest and feed the growing population.',
+      'warehouse': 'Stone piles are scattered everywhere. A proper warehouse would keep your building materials organized and protected.',
+      'hunters_lodge': 'Your scholars have studied the ways of the wild. Skilled hunters can now venture out to bring back game from the surrounding lands.'
     };
-    
-    const message = messages[buildingName as keyof typeof messages] || `The settlement has discovered new construction techniques. ${buildingName} is now available to build.`;
+
+    const message = messages[buildingName] || `The settlement has discovered new construction techniques. ${buildingName} is now available to build.`;
     this.addMessage(`building_${buildingName}`, message);
+  }
+
+  techResearched(techName: string, techId: string) {
+    const messages: Record<string, string> = {
+      'basic_tools': 'Simple but effective tools have been crafted. Workers across the settlement report improved productivity.',
+      'advanced_tools': 'The blacksmith has forged superior tools. Your workers can accomplish more with each swing of the hammer.',
+      'specialized_tools': 'Master craftsmen have designed tools tailored to each profession. Efficiency has never been higher.',
+      'agriculture': 'Farmers have discovered new techniques for tilling the soil. Crop yields are beginning to improve.',
+      'crop_rotation': 'By rotating crops between fields, the soil stays rich and fertile. Food production surges.',
+      'preservation': 'Salt curing and smoking techniques reduce food waste. Your stores last longer through the seasons.',
+      'hunting': 'Organized hunting parties can now track and harvest wild game reliably. The forest provides.',
+      'construction': 'New building methods reduce material waste. Construction costs have decreased.',
+      'masonry': 'Stone walls rise faster and stronger than ever. Your masons have truly mastered their craft.'
+    };
+
+    const message = messages[techId] || `Research into ${techName} has been completed, unlocking new possibilities for the settlement.`;
+    this.addMessage(`tech_${techId}`, message);
   }
 
   exportState(): StoryMessage[] {

@@ -120,6 +120,65 @@
       "buildTime": 4,
       "maxLevel": 3,
       "icon": "📚"
+    },
+    "granary": {
+      "id": "granary",
+      "name": "Granary",
+      "description": "Stores food to sustain your growing population",
+      "baseCost": {
+        "wood": 12,
+        "stone": 5
+      },
+      "pricing": {
+        "scalingFactor": 1.10,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "foodStorage": 20
+      },
+      "buildTime": 2,
+      "maxLevel": 5,
+      "icon": "🏺"
+    },
+    "warehouse": {
+      "id": "warehouse",
+      "name": "Warehouse",
+      "description": "Expands stone storage for larger construction projects",
+      "baseCost": {
+        "wood": 15,
+        "stone": 8
+      },
+      "pricing": {
+        "scalingFactor": 1.12,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "stoneStorage": 15
+      },
+      "buildTime": 2,
+      "maxLevel": 5,
+      "icon": "📦"
+    },
+    "hunters_lodge": {
+      "id": "hunters_lodge",
+      "name": "Hunter's Lodge",
+      "description": "Hunters provide food from nearby forests and plains",
+      "baseCost": {
+        "wood": 10,
+        "food": 3
+      },
+      "pricing": {
+        "scalingFactor": 1.15,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "foodPerTick": 1
+      },
+      "requiresWorker": true,
+      "requiresTerrain": ["forest", "plains"],
+      "buildTime": 2,
+      "maxLevel": 3,
+      "icon": "🏹"
     }
   }
 }

@@ -71,6 +71,18 @@ export class Game {
     this.storySystem.importState(data.storyMessages);
     this.renderer.getVisibilitySystem().importState(data.exploredHexes);
     this.currentTab = data.currentTab;
+
+    // Apply tech effects and building unlocks from researched techs
+    this.citySystem.setTechEffects(this.techSystem.getTechEffects());
+    const techBuildings = this.techSystem.getUnlockedBuildings();
+    if (techBuildings.length > 0) {
+      // Silently unlock without story messages on load
+      for (const id of techBuildings) {
+        if (!data.unlockedBuildings.includes(id)) {
+          this.citySystem.unlockBuildingsFromTech([id]);
+        }
+      }
+    }
   }
 
   private saveGame(): void {
@@ -299,10 +311,11 @@ export class Game {
 
       switch (tile.type.id) {
         case 'plains':
-          bonuses.food += 5; // +5% per plains
+          bonuses.food += 5; // +5% per plains (farm & hunter's lodge)
           break;
         case 'forest':
-          bonuses.wood += 10; // +10% per forest
+          bonuses.food += 10; // +10% per forest (hunter's lodge)
+          bonuses.wood += 10; // +10% per forest (lumber yard)
           break;
         case 'hill':
         case 'mountain':
@@ -380,7 +393,7 @@ export class Game {
       <div style="margin-bottom: 20px; padding: 10px; background: #34495e; border-radius: 6px;">
         <h3 style="margin: 0 0 10px 0; font-size: 16px;">💰 Resources</h3>
         <div style="font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-          <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span>${bonuses.food > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.food}%)</span>` : ''}</div>
+          <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span> <span style="color: #e74c3c; font-size: 11px;">(-${this.citySystem.getFoodConsumption()}/tick)</span>${bonuses.food > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.food}%)</span>` : ''}</div>
           <div>Wood: <span style="color: #8b4513; font-weight: bold;">${city.resources.wood}/${city.storage.wood}</span>${bonuses.wood > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.wood}%)</span>` : ''}</div>
           <div>Stone: <span style="color: #95a5a6; font-weight: bold;">${city.resources.stone}/${city.storage.stone}</span>${bonuses.stone > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.stone}%)</span>` : ''}</div>
           ${this.citySystem.hasResearchBuilding() ? `<div>Research: <span style="color: #9b59b6; font-weight: bold;">${city.resources.research}</span></div>` : ''}
@@ -822,10 +835,21 @@ export class Game {
   private startGameTick() {
     if (this.gameTickInterval) return; // Already running
 
+    // Apply tech effects on start
+    this.citySystem.setTechEffects(this.techSystem.getTechEffects());
+
     // Generate resources every 2 seconds
     this.gameTickInterval = window.setInterval(() => {
       if (this.citySystem.hasCity()) {
-        this.citySystem.generateResources();
+        // Update tech effects each tick
+        this.citySystem.setTechEffects(this.techSystem.getTechEffects());
+
+        const result = this.citySystem.generateResources();
+
+        // Trigger population growth story messages
+        if (result.populationGrew) {
+          this.storySystem.populationGrowth(result.populationGrew);
+        }
 
         // Update research progress
         const researchUpdate = this.techSystem.updateResearch();
@@ -833,6 +857,12 @@ export class Game {
           const tech = this.techSystem.getTechTypes().find(t => t.id === researchUpdate.completed);
           if (tech) {
             console.log(`Research completed: ${tech.name}`);
+            // Trigger story message for research completion
+            this.storySystem.techResearched(tech.name, tech.id);
+            // Unlock buildings from completed tech
+            if (tech.unlocksBuildings && tech.unlocksBuildings.length > 0) {
+              this.citySystem.unlockBuildingsFromTech(tech.unlocksBuildings);
+            }
           }
         }
 
@@ -990,6 +1020,18 @@ export class Game {
       'building_quarry': 'Mining Operations',
       'building_farm': 'Agricultural Development',
       'building_library': 'Age of Learning',
+      'building_granary': 'Food Preservation',
+      'building_warehouse': 'Storage Expansion',
+      'building_hunters_lodge': 'Hunting Grounds',
+      'tech_basic_tools': 'Discovery',
+      'tech_advanced_tools': 'Innovation',
+      'tech_specialized_tools': 'Mastery',
+      'tech_agriculture': 'Farming Knowledge',
+      'tech_crop_rotation': 'Agricultural Advance',
+      'tech_preservation': 'Preservation Arts',
+      'tech_hunting': 'Hunting Mastery',
+      'tech_construction': 'Building Techniques',
+      'tech_masonry': 'Masonry Arts',
       'pop_2': 'New Arrivals',
       'pop_5': 'Growing Community',
       'pop_10': 'Thriving Village'

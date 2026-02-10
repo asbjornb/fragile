@@ -73,7 +73,38 @@
       "effects": {
         "foodProduction": 0.5
       },
+      "unlocks": ["preservation"]
+    },
+    "preservation": {
+      "id": "preservation",
+      "name": "Preservation",
+      "description": "Food preservation techniques reduce spoilage and waste",
+      "icon": "🧂",
+      "cost": {
+        "research": 25
+      },
+      "researchTime": 60,
+      "prerequisites": ["crop_rotation"],
+      "effects": {
+        "foodConsumptionReduction": 0.25
+      },
       "unlocks": []
+    },
+    "hunting": {
+      "id": "hunting",
+      "name": "Hunting",
+      "description": "Organized hunting provides reliable food from wild game",
+      "icon": "🏹",
+      "cost": {
+        "research": 15
+      },
+      "researchTime": 40,
+      "prerequisites": [],
+      "effects": {
+        "foodProduction": 0.15
+      },
+      "unlocks": [],
+      "unlocksBuildings": ["hunters_lodge"]
     },
     "construction": {
       "id": "construction",

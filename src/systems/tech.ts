@@ -15,8 +15,18 @@ export interface TechType {
     foodProduction?: number;
     buildingCostReduction?: number;
     stoneProduction?: number;
+    foodConsumptionReduction?: number;
   };
   unlocks: string[];
+  unlocksBuildings?: string[];
+}
+
+export interface TechEffects {
+  workerEfficiency: number;
+  foodProduction: number;
+  buildingCostReduction: number;
+  stoneProduction: number;
+  foodConsumptionReduction: number;
 }
 
 export interface ResearchProgress {
@@ -149,17 +159,13 @@ export class TechSystem {
     this.currentResearch = data.currentResearch ? { ...data.currentResearch } : null;
   }
 
-  getTechEffects(): {
-    workerEfficiency: number;
-    foodProduction: number;
-    buildingCostReduction: number;
-    stoneProduction: number;
-  } {
-    const effects = {
+  getTechEffects(): TechEffects {
+    const effects: TechEffects = {
       workerEfficiency: 0,
       foodProduction: 0,
       buildingCostReduction: 0,
-      stoneProduction: 0
+      stoneProduction: 0,
+      foodConsumptionReduction: 0
     };
 
     for (const techId of this.researchedTechs) {
@@ -169,9 +175,21 @@ export class TechSystem {
         effects.foodProduction += tech.effects.foodProduction || 0;
         effects.buildingCostReduction += tech.effects.buildingCostReduction || 0;
         effects.stoneProduction += tech.effects.stoneProduction || 0;
+        effects.foodConsumptionReduction += tech.effects.foodConsumptionReduction || 0;
       }
     }
 
     return effects;
+  }
+
+  getUnlockedBuildings(): string[] {
+    const buildings: string[] = [];
+    for (const techId of this.researchedTechs) {
+      const tech = this.techTypes.get(techId);
+      if (tech?.unlocksBuildings) {
+        buildings.push(...tech.unlocksBuildings);
+      }
+    }
+    return buildings;
   }
 }
