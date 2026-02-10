@@ -22,6 +22,8 @@ export class Game {
   private gameTickInterval: number | null = null;
   private currentTab: 'buildings' | 'research' = 'buildings';
   private mobileToggles: HTMLDivElement | null = null;
+  private displayedBuildingIds: string[] = [];
+  private displayedResearchState: string = '';
 
   constructor(container: HTMLElement, saveData?: SaveData) {
     const seed = saveData?.seed;
@@ -549,6 +551,9 @@ export class Game {
 
   private switchTab(tab: 'buildings' | 'research') {
     this.currentTab = tab;
+    // Reset tracked state to force a full rebuild on tab switch
+    this.displayedBuildingIds = [];
+    this.displayedResearchState = '';
     this.updateTabContent();
 
     // Update tab button styles
@@ -568,25 +573,115 @@ export class Game {
     const contentArea = document.getElementById('management-content');
     if (!contentArea) return;
 
-    // Save horizontal scroll position before clearing content
-    const scrollLeft = contentArea.scrollLeft;
-
-    contentArea.innerHTML = '';
-
     if (this.currentTab === 'buildings') {
+      // Check if building list has changed
+      const currentBuildingIds = this.citySystem.getBuildingTypes().map(b => b.id);
+      const listChanged = currentBuildingIds.length !== this.displayedBuildingIds.length ||
+        currentBuildingIds.some((id, i) => id !== this.displayedBuildingIds[i]);
+
+      if (!listChanged && contentArea.children.length > 0) {
+        // In-place update: just refresh button states and costs
+        this.updateBuildingsInPlace(contentArea);
+        return;
+      }
+
+      this.displayedBuildingIds = currentBuildingIds;
+      contentArea.innerHTML = '';
       this.renderBuildingsTab(contentArea);
     } else if (this.currentTab === 'research' && this.citySystem.hasResearchBuilding()) {
+      // For research, compute a simple state key to detect changes
+      const currentResearch = this.techSystem.getCurrentResearch();
+      const availableTechs = this.techSystem.getAvailableTechs();
+      const stateKey = (currentResearch ? `${currentResearch.techId}:${Math.floor(currentResearch.progress)}` : 'none') +
+        '|' + availableTechs.map(t => t.id).join(',');
+
+      if (stateKey === this.displayedResearchState && contentArea.children.length > 0) {
+        // In-place update for research costs
+        this.updateResearchInPlace(contentArea);
+        return;
+      }
+
+      this.displayedResearchState = stateKey;
+      contentArea.innerHTML = '';
       this.renderResearchTab(contentArea);
     } else {
       // Fallback to buildings if research tab is selected but no research building
       this.currentTab = 'buildings';
+      this.displayedBuildingIds = this.citySystem.getBuildingTypes().map(b => b.id);
+      contentArea.innerHTML = '';
       this.renderBuildingsTab(contentArea);
     }
+  }
 
-    // Restore horizontal scroll position after browser lays out new content
-    requestAnimationFrame(() => {
-      contentArea.scrollLeft = scrollLeft;
-    });
+  private updateBuildingsInPlace(contentArea: HTMLElement) {
+    const city = this.citySystem.getCity();
+    if (!city) return;
+
+    const availableBuildings = this.citySystem.getBuildingTypes();
+    // Children: [headerDiv, ...buttonContainers]
+    for (let i = 0; i < availableBuildings.length; i++) {
+      const buildingType = availableBuildings[i];
+      const buttonContainer = contentArea.children[i + 1] as HTMLElement; // +1 for header
+      if (!buttonContainer) continue;
+
+      const canBuild = this.citySystem.canBuildBuilding(buildingType.id);
+      const currentCost = this.citySystem.getCurrentBuildingCost(buildingType.id);
+
+      const button = buttonContainer.children[0] as HTMLButtonElement;
+      const costDisplay = buttonContainer.children[1] as HTMLElement;
+      if (!button || !costDisplay) continue;
+
+      // Update button state
+      button.style.cursor = canBuild.canBuild ? 'pointer' : 'not-allowed';
+      button.style.backgroundColor = canBuild.canBuild ? '#27ae60' : '#7f8c8d';
+      button.style.color = canBuild.canBuild ? 'white' : '#bdc3c7';
+      button.disabled = !canBuild.canBuild;
+      button.title = canBuild.canBuild ? buildingType.description : (canBuild.reason || 'Cannot build');
+
+      // Update cost display
+      const costItems = Object.entries(currentCost).map(([resource, cost]) => {
+        const available = city.resources[resource as keyof typeof city.resources] || 0;
+        const hasEnough = available >= cost;
+        const color = hasEnough ? '#2ecc71' : '#e74c3c';
+        return `<span style="color: ${color}; font-weight: 500;">${cost} ${resource}</span>`;
+      });
+      costDisplay.innerHTML = costItems.join(' ');
+    }
+  }
+
+  private updateResearchInPlace(contentArea: HTMLElement) {
+    const city = this.citySystem.getCity();
+    if (!city) return;
+
+    const availableTechs = this.techSystem.getAvailableTechs();
+    // Children: [headerDiv, ...techContainers] (or [headerDiv, progressDiv] if researching)
+    for (let i = 0; i < availableTechs.length; i++) {
+      const tech = availableTechs[i];
+      const buttonContainer = contentArea.children[i + 1] as HTMLElement;
+      if (!buttonContainer) continue;
+
+      const canResearch = this.techSystem.canResearch(tech.id);
+      const hasEnoughResearch = city.resources.research >= tech.cost.research;
+
+      const button = buttonContainer.children[0] as HTMLButtonElement;
+      const costDisplay = buttonContainer.children[1] as HTMLElement;
+      if (!button || !costDisplay) continue;
+
+      button.style.cursor = (canResearch.canResearch && hasEnoughResearch) ? 'pointer' : 'not-allowed';
+      button.style.backgroundColor = (canResearch.canResearch && hasEnoughResearch) ? '#9b59b6' : '#7f8c8d';
+      button.style.color = (canResearch.canResearch && hasEnoughResearch) ? 'white' : '#bdc3c7';
+      button.disabled = !(canResearch.canResearch && hasEnoughResearch);
+
+      const cost = tech.cost.research;
+      const hasEnough = city.resources.research >= cost;
+      const color = hasEnough ? '#2ecc71' : '#e74c3c';
+
+      if (!canResearch.canResearch && canResearch.reason?.includes('Requires')) {
+        costDisplay.innerHTML = `<span style="color: #e67e22; font-size: 10px;">${canResearch.reason}</span>`;
+      } else {
+        costDisplay.innerHTML = `<span style="color: ${color}; font-weight: 500;">${cost} research</span><br><span style="color: #95a5a6; font-size: 10px;">${tech.researchTime}s</span>`;
+      }
+    }
   }
 
   private renderBuildingsTab(contentArea: HTMLElement) {
@@ -638,13 +733,9 @@ export class Game {
 
       costDisplay.innerHTML = costItems.join(' ');
 
-      if (!canBuild.canBuild) {
-        button.title = canBuild.reason || 'Cannot build';
-        button.disabled = true;
-      } else {
-        button.title = buildingType.description;
-        button.addEventListener('click', () => this.buildBuilding(buildingType.id));
-      }
+      button.title = canBuild.canBuild ? buildingType.description : (canBuild.reason || 'Cannot build');
+      button.disabled = !canBuild.canBuild;
+      button.addEventListener('click', () => this.buildBuilding(buildingType.id));
 
       buttonContainer.appendChild(button);
       buttonContainer.appendChild(costDisplay);
