@@ -141,6 +141,10 @@ src/
 - Basic smoke tests for rendering and console output
 - Manual testing for gameplay mechanics
 
+### Deployment
+- **GitHub Pages**: Automatic via `.github/workflows/deploy.yml` on push to `main`. Uses base path `/fragile/`.
+- **Cloudflare Pages**: Dashboard-connected. Cloudflare sets `CF_PAGES=1` env var, which Vite detects to use base path `/` instead of `/fragile/`.
+
 ### Development Workflow
 ```bash
 npm run dev      # Development server

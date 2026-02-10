@@ -60,7 +60,17 @@ npm run test:ui
 
 ## Hosting
 
-Designed for static hosting on platforms like Cloudflare Pages.
+Deployed via **GitHub Pages** (automatic on push to `main`) and optionally via **Cloudflare Pages** for PR preview deployments.
+
+### Cloudflare Pages Setup (Dashboard Connect)
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com) → Workers & Pages → Create → Pages → Connect to Git
+2. Select this repository and configure:
+   - **Production branch:** `main`
+   - **Build command:** `npm run build`
+   - **Build output directory:** `dist`
+3. Save and deploy — Cloudflare sets `CF_PAGES=1` automatically, which tells Vite to use `/` as the base path instead of `/fragile/`
+4. Every PR will get an automatic preview URL at `<commit>.fragile.pages.dev`
 
 ---
 
