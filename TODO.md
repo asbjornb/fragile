@@ -4,15 +4,17 @@
 
 - ✅ **Core Foundation**: Project structure (Vite + TypeScript), dependencies (PixiJS, Zustand, React), Playwright testing
 - ✅ **World & Exploration**: Hex grid rendering, fog-of-war visibility, settler movement with smooth animation, procedural world generation with adaptive terrain clustering
-- ✅ **City Management**: City founding, building system (5 building types), worker assignment, resource storage with scaling costs
+- ✅ **City Management**: City founding, building system (8 building types), worker assignment, resource storage with scaling costs
 - ✅ **UI Systems**: Resource display overlay, terrain legend with production bonuses, organized left sidebar, clean UI transitions
-- ✅ **Game Systems**: Story/events system, tech tree with research mechanics, terrain-based production bonuses
+- ✅ **Game Systems**: Story/events system, tech tree with research mechanics (effects applied), terrain-based production bonuses
+- ✅ **Content Expansion**: 3 new buildings (granary, warehouse, hunter's lodge), 2 new techs (hunting, preservation), food consumption mechanic, tech-based building unlocks, tech effects applied to production/costs
 - ✅ **Mobile Support**: Responsive layout with toggleable sidebar overlays, touch-optimized targets, viewport zoom prevention
+- ✅ **Save/Load System**: Auto-save with localStorage, title screen with New Game / Continue, versioned save format
 
 ## In Progress / Pending
 
 ### High Priority
-- ⏳ Implement save/load system with localStorage
+- ✅ Implement save/load system with localStorage
 - ⏳ Update spec with decisions made
 
 ### Medium Priority

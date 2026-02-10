@@ -201,4 +201,8 @@ export class WorldGenerator {
     const key = `${hex.q},${hex.r}`;
     return this.generatedTiles.get(key);
   }
+
+  getSeed(): number {
+    return this.seed;
+  }
 }

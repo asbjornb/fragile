@@ -1,6 +1,7 @@
 import { HexCoordinate, HexUtils } from '../core/hex';
 import buildingsData from '../data/buildings.json';
 import { WorldGenerator } from '../systems/worldgen';
+import { TechEffects } from '../systems/tech';
 
 export interface City {
   id: string;
@@ -76,6 +77,13 @@ export class CitySystem {
   private unlockedBuildings: Set<string> = new Set();
   private worldGenerator: WorldGenerator;
   private storyCallback?: (buildingName: string) => void;
+  private techEffects: TechEffects = {
+    workerEfficiency: 0,
+    foodProduction: 0,
+    buildingCostReduction: 0,
+    stoneProduction: 0,
+    foodConsumptionReduction: 0
+  };
 
   constructor(worldGenerator: WorldGenerator) {
     this.worldGenerator = worldGenerator;
@@ -169,10 +177,26 @@ export class CitySystem {
     if (!this.unlockedBuildings.has('shed') && this.city.resources.wood >= this.city.storage.wood) {
       this.unlockedBuildings.add('shed');
       console.log('🏚️ Shed unlocked! Wood storage was maxed out.');
-      
-      // Trigger story message
       if (this.storyCallback) {
         this.storyCallback('shed');
+      }
+    }
+
+    // Unlock granary when food storage is maxed out
+    if (!this.unlockedBuildings.has('granary') && this.city.resources.food >= this.city.storage.food) {
+      this.unlockedBuildings.add('granary');
+      console.log('🏺 Granary unlocked! Food storage was maxed out.');
+      if (this.storyCallback) {
+        this.storyCallback('granary');
+      }
+    }
+
+    // Unlock warehouse when stone storage is maxed out
+    if (!this.unlockedBuildings.has('warehouse') && this.city.resources.stone >= this.city.storage.stone) {
+      this.unlockedBuildings.add('warehouse');
+      console.log('📦 Warehouse unlocked! Stone storage was maxed out.');
+      if (this.storyCallback) {
+        this.storyCallback('warehouse');
       }
     }
 
@@ -180,8 +204,6 @@ export class CitySystem {
     if (!this.unlockedBuildings.has('library') && this.city.population >= 10) {
       this.unlockedBuildings.add('library');
       console.log('📚 Library unlocked! Your settlement has grown large enough to support scholarly pursuits.');
-      
-      // Trigger story message
       if (this.storyCallback) {
         this.storyCallback('library');
       }
@@ -190,6 +212,22 @@ export class CitySystem {
 
   setStoryCallback(callback: (buildingName: string) => void): void {
     this.storyCallback = callback;
+  }
+
+  setTechEffects(effects: TechEffects): void {
+    this.techEffects = effects;
+  }
+
+  unlockBuildingsFromTech(buildingIds: string[]): void {
+    for (const id of buildingIds) {
+      if (!this.unlockedBuildings.has(id) && this.buildingTypes.has(id)) {
+        this.unlockedBuildings.add(id);
+        console.log(`🔓 ${this.buildingTypes.get(id)!.name} unlocked via research!`);
+        if (this.storyCallback) {
+          this.storyCallback(id);
+        }
+      }
+    }
   }
 
   hasResearchBuilding(): boolean {
@@ -251,6 +289,13 @@ export class CitySystem {
             bonusMultiplier += 0.05; // +5% per plains tile
           }
           break;
+        case 'hunters_lodge':
+          if (tile.type.id === 'forest') {
+            bonusMultiplier += 0.10; // +10% per forest tile
+          } else if (tile.type.id === 'plains') {
+            bonusMultiplier += 0.05; // +5% per plains tile
+          }
+          break;
       }
     });
 
@@ -260,19 +305,20 @@ export class CitySystem {
   // Calculate current cost for a building type based on how many have been built
   getCurrentBuildingCost(buildingTypeId: string): { wood?: number; stone?: number; food?: number } {
     if (!this.city) return {};
-    
+
     const buildingType = this.buildingTypes.get(buildingTypeId);
     if (!buildingType) return {};
 
     // Count how many of this building type exist
     const existingCount = this.city.buildings.filter(b => b.type === buildingTypeId).length;
-    
+
+    const costReduction = Math.min(this.techEffects.buildingCostReduction, 0.5); // Cap at 50% reduction
     const scaledCost: { wood?: number; stone?: number; food?: number } = {};
-    
+
     for (const [resource, baseCost] of Object.entries(buildingType.baseCost)) {
       if (baseCost !== undefined) {
         let currentCost: number;
-        
+
         switch (buildingType.pricing.scalingType) {
           case 'exponential':
             currentCost = Math.ceil(baseCost * Math.pow(buildingType.pricing.scalingFactor, existingCount));
@@ -285,11 +331,13 @@ export class CitySystem {
             currentCost = baseCost;
             break;
         }
-        
+
+        // Apply tech cost reduction
+        currentCost = Math.max(1, Math.ceil(currentCost * (1 - costReduction)));
         scaledCost[resource as keyof typeof scaledCost] = currentCost;
       }
     }
-    
+
     return scaledCost;
   }
 
@@ -398,35 +446,51 @@ export class CitySystem {
     this.city.resources.stone = Math.min(this.city.resources.stone, this.city.storage.stone);
   }
 
+  // Calculate food consumed per tick based on population
+  getFoodConsumption(): number {
+    if (!this.city) return 0;
+    const baseConsumption = Math.ceil(this.city.population / 3);
+    const reduction = Math.min(this.techEffects.foodConsumptionReduction, 0.5); // Cap at 50%
+    return Math.max(1, Math.ceil(baseConsumption * (1 - reduction)));
+  }
+
   // Resource production (called each tick)
-  generateResources(): void {
-    if (!this.city) return;
+  generateResources(): { populationGrew?: number } {
+    if (!this.city) return {};
 
     // Base city production (no workers needed)
     this.city.resources.wood = Math.min(
-      this.city.resources.wood + 1, 
+      this.city.resources.wood + 1,
       this.city.storage.wood
     );
     this.city.resources.stone = Math.min(
-      this.city.resources.stone + 1, 
+      this.city.resources.stone + 1,
       this.city.storage.stone
     );
+
+    // Food consumption by population
+    const foodConsumed = this.getFoodConsumption();
+    this.city.resources.food = Math.max(0, this.city.resources.food - foodConsumed);
 
     // Check for building unlocks after resource changes
     this.checkUnlocks();
 
     // Population growth (if we have food surplus and space)
+    let populationGrew: number | undefined;
     if (this.city.resources.food >= 3 && this.city.population < this.city.maxPopulation) {
-      // Every 5 ticks with food surplus, grow population
       const growthChance = 0.2; // 20% chance per tick when conditions are met
       if (Math.random() < growthChance) {
         this.city.population++;
+        populationGrew = this.city.population;
         this.city.resources.food -= 3; // Population growth consumes food
         this.applyBuildingEffects(); // Recalculate available workers
       }
     }
 
-    // Building production (with workers and terrain bonuses)
+    // Worker efficiency bonus from tech
+    const workerEfficiencyBonus = 1 + this.techEffects.workerEfficiency;
+
+    // Building production (with workers, terrain bonuses, and tech effects)
     this.city.buildings.forEach(building => {
       const buildingType = this.buildingTypes.get(building.type);
       if (!buildingType || building.assignedWorkers === 0) return;
@@ -437,31 +501,35 @@ export class CitySystem {
       const productionMultiplier = 1 + terrainBonus;
 
       if (effects.foodPerTick) {
-        const production = Math.floor(effects.foodPerTick * workerRatio * building.level * productionMultiplier);
+        const techFoodBonus = 1 + this.techEffects.foodProduction;
+        const production = Math.floor(effects.foodPerTick * workerRatio * building.level * productionMultiplier * workerEfficiencyBonus * techFoodBonus);
         this.city!.resources.food = Math.min(
           this.city!.resources.food + production,
           this.city!.storage.food
         );
       }
       if (effects.woodPerTick) {
-        const production = Math.floor(effects.woodPerTick * workerRatio * building.level * productionMultiplier);
+        const production = Math.floor(effects.woodPerTick * workerRatio * building.level * productionMultiplier * workerEfficiencyBonus);
         this.city!.resources.wood = Math.min(
           this.city!.resources.wood + production,
           this.city!.storage.wood
         );
       }
       if (effects.stonePerTick) {
-        const production = Math.floor(effects.stonePerTick * workerRatio * building.level * productionMultiplier);
+        const techStoneBonus = 1 + this.techEffects.stoneProduction;
+        const production = Math.floor(effects.stonePerTick * workerRatio * building.level * productionMultiplier * workerEfficiencyBonus * techStoneBonus);
         this.city!.resources.stone = Math.min(
           this.city!.resources.stone + production,
           this.city!.storage.stone
         );
       }
       if (effects.researchPerTick) {
-        const production = Math.floor(effects.researchPerTick * workerRatio * building.level);
-        this.city!.resources.research += production; // Research has no storage limit
+        const production = Math.floor(effects.researchPerTick * workerRatio * building.level * workerEfficiencyBonus);
+        this.city!.resources.research += production;
       }
     });
+
+    return populationGrew ? { populationGrew } : {};
   }
 
   // Worker management
@@ -536,6 +604,18 @@ export class CitySystem {
     building.assignedWorkers--;
     this.applyBuildingEffects();
     return true;
+  }
+
+  exportState(): { city: City | null; unlockedBuildings: string[] } {
+    return {
+      city: this.city ? JSON.parse(JSON.stringify(this.city)) : null,
+      unlockedBuildings: Array.from(this.unlockedBuildings)
+    };
+  }
+
+  importState(data: { city: City | null; unlockedBuildings: string[] }): void {
+    this.city = data.city ? JSON.parse(JSON.stringify(data.city)) : null;
+    this.unlockedBuildings = new Set(data.unlockedBuildings);
   }
 
   // Get worker assignment info for debugging

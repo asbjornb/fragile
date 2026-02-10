@@ -19,9 +19,9 @@ export class HexRenderer {
   private worldGenerator: WorldGenerator;
   private zoomLevel: number = 1.0;
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, seed?: number) {
     console.log('Container dimensions:', container.clientWidth, container.clientHeight);
-    
+
     this.app = new PIXI.Application({
       width: container.clientWidth || 800,
       height: container.clientHeight || 600,
@@ -35,14 +35,14 @@ export class HexRenderer {
 
     this.hexContainer = new PIXI.Container();
     this.app.stage.addChild(this.hexContainer);
-    
+
     this.uiContainer = new PIXI.Container();
     this.app.stage.addChild(this.uiContainer);
-    
+
     this.visibilitySystem = new VisibilitySystem();
     this.visibilitySystem.updateVisibility({ q: 0, r: 0 }, 2);
-    
-    this.worldGenerator = new WorldGenerator();
+
+    this.worldGenerator = new WorldGenerator(seed);
 
     this.setupCamera();
     this.setupUI();
@@ -760,6 +760,10 @@ export class HexRenderer {
 
   getWorldGenerator(): WorldGenerator {
     return this.worldGenerator;
+  }
+
+  getVisibilitySystem(): VisibilitySystem {
+    return this.visibilitySystem;
   }
 
 

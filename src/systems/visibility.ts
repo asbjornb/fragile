@@ -70,4 +70,12 @@ export class VisibilitySystem {
       return { q, r };
     });
   }
+
+  exportState(): string[] {
+    return Array.from(this.state.explored);
+  }
+
+  importState(exploredKeys: string[]): void {
+    this.state.explored = new Set(exploredKeys);
+  }
 }
