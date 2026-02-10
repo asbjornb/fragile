@@ -378,6 +378,11 @@ export class Game {
       }
     }).join('');
 
+    // Save scroll positions before innerHTML replacement
+    const sidebarScrollTop = this.leftSidebar.scrollTop;
+    const buildingsContainer = this.leftSidebar.querySelector('[data-scroll-id="buildings-list"]') as HTMLElement | null;
+    const buildingsScrollTop = buildingsContainer?.scrollTop ?? 0;
+
     this.leftSidebar.innerHTML = `
       <h2 style="margin: 0 0 15px 0; font-size: 20px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">${city.name}</h2>
 
@@ -419,11 +424,18 @@ export class Game {
           <h3 style="margin: 0; font-size: 16px;">🏘️ Buildings</h3>
           <button id="unassign-all" style="padding: 6px 12px; font-size: 12px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer;">Unassign All</button>
         </div>
-        <div style="max-height: calc(100vh - 600px); overflow-y: auto;">
+        <div data-scroll-id="buildings-list" style="max-height: calc(100vh - 600px); overflow-y: auto;">
           ${buildingsList || '<div style="font-size: 14px; color: #7f8c8d; text-align: center; padding: 30px;">No buildings yet</div>'}
         </div>
       </div>
     `;
+
+    // Restore scroll positions after innerHTML replacement
+    this.leftSidebar.scrollTop = sidebarScrollTop;
+    const newBuildingsContainer = this.leftSidebar.querySelector('[data-scroll-id="buildings-list"]') as HTMLElement | null;
+    if (newBuildingsContainer) {
+      newBuildingsContainer.scrollTop = buildingsScrollTop;
+    }
 
     // Add mobile close button after innerHTML update
     if (this.isMobile()) {
@@ -554,6 +566,9 @@ export class Game {
     const contentArea = document.getElementById('management-content');
     if (!contentArea) return;
 
+    // Save horizontal scroll position before clearing content
+    const scrollLeft = contentArea.scrollLeft;
+
     contentArea.innerHTML = '';
 
     if (this.currentTab === 'buildings') {
@@ -565,6 +580,9 @@ export class Game {
       this.currentTab = 'buildings';
       this.renderBuildingsTab(contentArea);
     }
+
+    // Restore horizontal scroll position after content is rebuilt
+    contentArea.scrollLeft = scrollLeft;
   }
 
   private renderBuildingsTab(contentArea: HTMLElement) {
@@ -866,9 +884,7 @@ export class Game {
           }
         }
 
-        this.refreshManagementBar();
-        this.updateLeftSidebar(); // Update sidebar with terrain bonuses
-        this.setupWorkerButtons(); // Re-setup event listeners after innerHTML update
+        this.refreshManagementBar(); // Also updates left sidebar and worker buttons
 
         // Update city UI with current resources
         const city = this.citySystem.getCity()!;
@@ -990,10 +1006,18 @@ export class Game {
       `;
     }).join('');
 
+    // Check if user was scrolled near the bottom before updating content
+    const wasNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 50;
+    const previousScrollTop = messagesContainer.scrollTop;
+
     messagesContainer.innerHTML = messagesHTML;
 
-    // Auto-scroll to bottom to show latest message
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // Only auto-scroll to bottom if user was already near the bottom
+    if (wasNearBottom) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    } else {
+      messagesContainer.scrollTop = previousScrollTop;
+    }
   }
 
   private getTimeAgo(timestamp: number): string {
