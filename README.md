@@ -2,7 +2,8 @@
 
 An incremental rogue-civilization browser game where civilizations rise and inevitably fall.
 
-**Play now:** [fragile.pages.dev](https://fragile.pages.dev)
+**Play now:** [fragile.pages.dev](
+https://fragile-da4.pages.dev/)
 
 ## Overview
 
