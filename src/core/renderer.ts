@@ -774,25 +774,32 @@ export class HexRenderer {
     }
   }
 
-  animateZoom(targetZoom: number, duration: number = 800, onComplete?: () => void) {
+  animateZoom(targetZoom: number, duration: number = 800, onComplete?: () => void, centerHex?: HexCoordinate) {
     if (this.isAnimating) return;
-    
+
     this.isAnimating = true;
     const startZoom = this.zoomLevel;
     const startTime = Date.now();
-    
+    const targetPixel = centerHex ? HexUtils.hexToPixel(centerHex) : null;
+
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       // Smooth easing
       const easeProgress = 1 - Math.pow(1 - progress, 3);
-      
+
       // Interpolate zoom level
       const currentZoom = startZoom + (targetZoom - startZoom) * easeProgress;
       this.zoomLevel = currentZoom;
       this.hexContainer.scale.set(this.zoomLevel);
-      
+
+      // Keep camera centered on target hex as zoom changes
+      if (targetPixel) {
+        this.hexContainer.x = this.app.screen.width / 2 - targetPixel.x * this.zoomLevel;
+        this.hexContainer.y = this.app.screen.height / 2 - targetPixel.y * this.zoomLevel;
+      }
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
@@ -800,7 +807,7 @@ export class HexRenderer {
         if (onComplete) onComplete();
       }
     };
-    
+
     requestAnimationFrame(animate);
   }
 

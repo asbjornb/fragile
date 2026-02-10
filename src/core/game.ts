@@ -200,7 +200,7 @@ export class Game {
       this.setupMobileToggles();
       this.startGameTick();
       this.saveGame();
-    });
+    }, settler.position);
 
     console.log('City founded successfully!', city);
   }
