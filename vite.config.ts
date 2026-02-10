@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.NODE_ENV === 'production' ? '/fragile/' : '/',
+  base: process.env.CF_PAGES ? '/' : process.env.NODE_ENV === 'production' ? '/fragile/' : '/',
   server: {
     port: 3000
   },
