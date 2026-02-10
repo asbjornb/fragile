@@ -8,11 +8,12 @@
 - ✅ **UI Systems**: Resource display overlay, terrain legend with production bonuses, organized left sidebar, clean UI transitions
 - ✅ **Game Systems**: Story/events system, tech tree with research mechanics, terrain-based production bonuses
 - ✅ **Mobile Support**: Responsive layout with toggleable sidebar overlays, touch-optimized targets, viewport zoom prevention
+- ✅ **Save/Load System**: Auto-save with localStorage, title screen with New Game / Continue, versioned save format
 
 ## In Progress / Pending
 
 ### High Priority
-- ⏳ Implement save/load system with localStorage
+- ✅ Implement save/load system with localStorage
 - ⏳ Update spec with decisions made
 
 ### Medium Priority

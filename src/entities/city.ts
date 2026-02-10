@@ -538,6 +538,18 @@ export class CitySystem {
     return true;
   }
 
+  exportState(): { city: City | null; unlockedBuildings: string[] } {
+    return {
+      city: this.city ? JSON.parse(JSON.stringify(this.city)) : null,
+      unlockedBuildings: Array.from(this.unlockedBuildings)
+    };
+  }
+
+  importState(data: { city: City | null; unlockedBuildings: string[] }): void {
+    this.city = data.city ? JSON.parse(JSON.stringify(data.city)) : null;
+    this.unlockedBuildings = new Set(data.unlockedBuildings);
+  }
+
   // Get worker assignment info for debugging
   getWorkerInfo(): { population: number; assigned: number; available: number; buildings: Array<{name: string; assigned: number; max: number}> } {
     if (!this.city) return { population: 0, assigned: 0, available: 0, buildings: [] };

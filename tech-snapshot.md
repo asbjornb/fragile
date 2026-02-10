@@ -60,12 +60,20 @@
 - Adjacent-only movement validation
 - Touch-optimized via CSS `touch-action: manipulation`
 
+**Save System** (`src/core/save.ts`)
+- Versioned save format (v1)
+- Auto-save on game tick, movement, building, and city founding
+- Save on page unload
+- Title screen with New Game / Continue
+- localStorage-based persistence
+
 **Game Controller** (`src/core/game.ts`)
 - Orchestrates all systems
 - Handles movement logic and validation
 - Manages animation callbacks
 - Controls phase transitions (exploration → city management)
 - Mobile-responsive layout with toggleable overlay sidebars (<768px)
+- Save/load integration with full state restoration
 
 **City Management** (`src/entities/city.ts`)
 - Population and worker management
@@ -124,7 +132,8 @@ src/
 ├── core/           # Engine layer
 │   ├── game.ts     # Main game controller
 │   ├── hex.ts      # Hexagonal coordinate system
-│   └── renderer.ts # PixiJS rendering engine
+│   ├── renderer.ts # PixiJS rendering engine
+│   └── save.ts     # Save/load system with localStorage
 ├── entities/       # Game objects
 │   ├── settler.ts  # Settler entity and logic
 │   └── city.ts     # City entity and management
@@ -180,18 +189,15 @@ npm run test     # Run Playwright tests
 
 ## Known Limitations
 
-1. **No save/load system** - Progress lost on refresh
-2. **No dynamic events** - No bandit raids, harsh winters, or unrest mechanics
-3. **No tech tree** - Linear progression not yet implemented
-4. **No UI overlay** - Resource management through console only
-5. **Memory growth** - Generated tiles never cleaned up
+1. **No dynamic events** - No bandit raids, harsh winters, or unrest mechanics
+2. **Memory growth** - Generated tiles never cleaned up
+3. **Tech effects not applied** - Researched techs don't modify production yet
 
 ## Next Planned Features
-1. Build basic UI overlay with resource display
-2. Implement save/load with localStorage
+1. Add more content (buildings, techs, resources)
+2. Implement unrest and collapse mechanics
 3. Add dynamic events (bandit raids, harsh winters)
-4. Create tech tree and research system
-5. Implement unrest and collapse mechanics
+4. Create legacy/prestige system
 
 ---
 

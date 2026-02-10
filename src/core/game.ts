@@ -5,6 +5,7 @@ import { CitySystem } from '../entities/city';
 import { InputSystem } from '../systems/input';
 import { StorySystem } from '../systems/events';
 import { TechSystem } from '../systems/tech';
+import { SaveSystem, SaveData } from './save';
 
 export class Game {
   private renderer: HexRenderer;
@@ -22,8 +23,9 @@ export class Game {
   private currentTab: 'buildings' | 'research' = 'buildings';
   private mobileToggles: HTMLDivElement | null = null;
 
-  constructor(container: HTMLElement) {
-    this.renderer = new HexRenderer(container);
+  constructor(container: HTMLElement, saveData?: SaveData) {
+    const seed = saveData?.seed;
+    this.renderer = new HexRenderer(container, seed);
     this.settlerSystem = new SettlerSystem();
     this.citySystem = new CitySystem(this.renderer.getWorldGenerator());
     this.storySystem = new StorySystem();
@@ -33,27 +35,85 @@ export class Game {
       () => this.renderer.getCameraOffset()
     );
 
+    if (saveData) {
+      this.loadState(saveData);
+    }
+
     this.setupUI(container);
     this.setupInputHandling();
     this.setupStorySystem();
-    this.render();
+
+    if (saveData && saveData.phase === 'city') {
+      // Restore city UI immediately (no animation)
+      this.renderer.setZoom(2.0);
+      this.render();
+      this.updateUI();
+      this.setupLeftSidebar();
+      this.setupCityManagement();
+      this.setupStoryPanel();
+      this.setupMobileToggles();
+      this.startGameTick();
+    } else {
+      this.render();
+    }
+  }
+
+  private loadState(data: SaveData): void {
+    this.settlerSystem.importState(data.settler);
+    this.citySystem.importState({
+      city: data.city,
+      unlockedBuildings: data.unlockedBuildings
+    });
+    this.techSystem.importState({
+      researchedTechs: data.researchedTechs,
+      currentResearch: data.currentResearch
+    });
+    this.storySystem.importState(data.storyMessages);
+    this.renderer.getVisibilitySystem().importState(data.exploredHexes);
+    this.currentTab = data.currentTab;
+  }
+
+  private saveGame(): void {
+    const visState = this.renderer.getVisibilitySystem().exportState();
+    const cityState = this.citySystem.exportState();
+    const techState = this.techSystem.exportState();
+
+    const data: SaveData = {
+      version: 1,
+      timestamp: Date.now(),
+      seed: this.renderer.getWorldGenerator().getSeed(),
+      phase: this.citySystem.hasCity() ? 'city' : 'exploration',
+      settler: this.settlerSystem.exportState(),
+      city: cityState.city,
+      unlockedBuildings: cityState.unlockedBuildings,
+      researchedTechs: techState.researchedTechs,
+      currentResearch: techState.currentResearch,
+      exploredHexes: visState,
+      storyMessages: this.storySystem.exportState(),
+      currentTab: this.currentTab
+    };
+
+    SaveSystem.save(data);
   }
 
   private setupInputHandling() {
     this.inputSystem.setClickHandler((hex: HexCoordinate) => {
+      if (this.citySystem.hasCity()) return; // No movement in city phase
+
       const settler = this.settlerSystem.getSettler();
       const distance = HexUtils.hexDistance(settler.position, hex);
-      
+
       // Only allow movement to adjacent hexes
       if (distance === 1 && this.settlerSystem.canMove()) {
         const fromHex = settler.position;
         const success = this.settlerSystem.moveSettler(hex);
         if (success) {
           console.log(`Settler moved to ${hex.q}, ${hex.r}`);
-          
+
           // Animate the movement
           this.renderer.animateSettlerMovement(fromHex, hex, this.settlerSystem.getSettler(), () => {
             this.updateVisibility();
+            this.saveGame();
           });
         }
       } else if (distance > 1) {
@@ -79,7 +139,7 @@ export class Game {
     this.settlementUI.style.zIndex = '1000';
     this.settlementUI.style.display = 'flex';
     this.settlementUI.style.gap = '10px';
-    
+
     // Settle button
     this.settleButton = document.createElement('button');
     this.settleButton.textContent = 'Settle Here';
@@ -97,10 +157,10 @@ export class Game {
     }
 
     this.settleButton.addEventListener('click', () => this.settleCity());
-    
+
     this.settlementUI.appendChild(this.settleButton);
     container.appendChild(this.settlementUI);
-    
+
     this.updateUI();
   }
 
@@ -112,12 +172,12 @@ export class Game {
 
     const settler = this.settlerSystem.getSettler();
     console.log(`Founding city at ${settler.position.q}, ${settler.position.r}`);
-    
+
     const city = this.citySystem.foundCity(settler.position, settler.food);
-    
+
     // Trigger story message for city founding
     this.storySystem.cityFounded();
-    
+
     // Animate zoom in to city view and then render city
     this.renderer.animateZoom(2.0, 1000, () => {
       this.render(); // Use render method instead of renderCity directly
@@ -127,16 +187,17 @@ export class Game {
       this.setupStoryPanel();
       this.setupMobileToggles();
       this.startGameTick();
+      this.saveGame();
     });
-    
+
     console.log('City founded successfully!', city);
   }
 
   private updateUI() {
     if (!this.settlementUI) return;
-    
+
     const hasCity = this.citySystem.hasCity();
-    
+
     if (hasCity) {
       // Hide entire settlement UI when city exists
       this.settlementUI.style.display = 'none';
@@ -156,7 +217,7 @@ export class Game {
 
   private adjustHexGridForCityMode(isCityMode: boolean) {
     const canvas = this.renderer.getCanvas();
-    
+
     if (canvas) {
       if (isCityMode) {
         // Move canvas up to reclaim settlement UI space
@@ -172,7 +233,7 @@ export class Game {
 
   private setupLeftSidebar() {
     if (this.leftSidebar) return; // Already exists
-    
+
     const city = this.citySystem.getCity();
     if (!city) return;
 
@@ -196,7 +257,7 @@ export class Game {
 
     this.updateLeftSidebar();
     document.body.appendChild(this.leftSidebar);
-    
+
     // Add event listeners for worker assignment buttons
     this.setupWorkerButtons();
   }
@@ -213,18 +274,18 @@ export class Game {
 
     // Get all hexes within radius (including center tile)
     const hexesToCheck: HexCoordinate[] = [];
-    
+
     // Add center tile (the city tile itself)
     hexesToCheck.push(cityPosition);
-    
+
     // Add tiles within radius
     for (let q = -radius; q <= radius; q++) {
       for (let r = Math.max(-radius, -q - radius); r <= Math.min(radius, -q + radius); r++) {
         const hex = { q: cityPosition.q + q, r: cityPosition.r + r };
-        
+
         // Skip center tile (already added)
         if (hex.q === cityPosition.q && hex.r === cityPosition.r) continue;
-        
+
         // Only include if within actual radius
         if (HexUtils.hexDistance(cityPosition, hex) <= radius) {
           hexesToCheck.push(hex);
@@ -255,7 +316,7 @@ export class Game {
 
   private updateLeftSidebar() {
     if (!this.leftSidebar) return;
-    
+
     const city = this.citySystem.getCity();
     if (!city) return;
 
@@ -264,11 +325,11 @@ export class Game {
 
     // Group buildings by type and count them
     const buildingCounts = new Map<string, { count: number; totalWorkers: number; maxWorkers: number; buildingType: any }>();
-    
+
     city.buildings.filter(b => b.type !== 'town_hall').forEach(building => {
       const buildingType = this.citySystem.getBuildingTypes().find(bt => bt.id === building.type);
       const existing = buildingCounts.get(building.type) || { count: 0, totalWorkers: 0, maxWorkers: 0, buildingType };
-      
+
       buildingCounts.set(building.type, {
         count: existing.count + 1,
         totalWorkers: existing.totalWorkers + building.assignedWorkers,
@@ -288,7 +349,7 @@ export class Game {
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span style="font-size: 12px; color: #95a5a6;">Workers: ${data.totalWorkers}/${data.maxWorkers}</span>
             <div style="display: flex; align-items: center; gap: 6px; min-width: 50px; justify-content: flex-end;">
-              <button class="worker-btn" data-action="unassign" data-building-type="${buildingTypeId}" 
+              <button class="worker-btn" data-action="unassign" data-building-type="${buildingTypeId}"
                       style="width: 22px; height: 22px; font-size: 12px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer; ${data.totalWorkers > 0 ? '' : 'visibility: hidden;'}">-</button>
               <button class="worker-btn" data-action="assign" data-building-type="${buildingTypeId}"
                       style="width: 22px; height: 22px; font-size: 12px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer; ${(data.totalWorkers < data.maxWorkers && city.availableWorkers > 0) ? '' : 'visibility: hidden;'}">+</button>
@@ -303,10 +364,10 @@ export class Game {
         </div>`;
       }
     }).join('');
-    
+
     this.leftSidebar.innerHTML = `
       <h2 style="margin: 0 0 15px 0; font-size: 20px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">${city.name}</h2>
-      
+
       <div style="margin-bottom: 20px; padding: 10px; background: #34495e; border-radius: 6px;">
         <h3 style="margin: 0 0 10px 0; font-size: 16px;">📊 City Status</h3>
         <div style="font-size: 14px;">
@@ -363,7 +424,7 @@ export class Game {
 
   private getResearchedTechsHTML(): string {
     const researchedTechs = this.techSystem.getResearchedTechs();
-    
+
     if (researchedTechs.length === 0) {
       return '<div style="font-size: 12px; color: #7f8c8d; text-align: center; padding: 15px; font-style: italic;">No technologies researched yet</div>';
     }
@@ -382,7 +443,7 @@ export class Game {
 
   private setupCityManagement() {
     if (this.managementBar) return; // Already exists
-    
+
     const city = this.citySystem.getCity();
     if (!city) return;
 
@@ -404,7 +465,7 @@ export class Game {
     tabHeader.style.display = 'flex';
     tabHeader.style.height = '40px';
     tabHeader.style.backgroundColor = '#34495e';
-    
+
     // Buildings tab
     const buildingsTab = document.createElement('button');
     buildingsTab.textContent = '🏗️ Buildings';
@@ -415,9 +476,9 @@ export class Game {
     buildingsTab.style.cursor = 'pointer';
     buildingsTab.style.borderRight = '1px solid #2c3e50';
     buildingsTab.addEventListener('click', () => this.switchTab('buildings'));
-    
+
     tabHeader.appendChild(buildingsTab);
-    
+
     // Research tab - only show if research building exists
     if (this.citySystem.hasResearchBuilding()) {
       const researchTab = document.createElement('button');
@@ -454,7 +515,7 @@ export class Game {
     this.managementBar.appendChild(contentArea);
 
     document.body.appendChild(this.managementBar);
-    
+
     // Load initial tab content
     this.updateTabContent();
   }
@@ -462,14 +523,14 @@ export class Game {
   private switchTab(tab: 'buildings' | 'research') {
     this.currentTab = tab;
     this.updateTabContent();
-    
+
     // Update tab button styles
     if (this.managementBar) {
       const tabs = this.managementBar.querySelectorAll('button');
       tabs.forEach((tabButton, index) => {
         if (index === 0) { // Buildings tab
           tabButton.style.backgroundColor = tab === 'buildings' ? '#2c3e50' : '#34495e';
-        } else if (index === 1) { // Research tab  
+        } else if (index === 1) { // Research tab
           tabButton.style.backgroundColor = tab === 'research' ? '#2c3e50' : '#34495e';
         }
       });
@@ -501,14 +562,14 @@ export class Game {
     const buildButtons = availableBuildings.map(buildingType => {
       const canBuild = this.citySystem.canBuildBuilding(buildingType.id);
       const currentCost = this.citySystem.getCurrentBuildingCost(buildingType.id);
-      
+
       const buttonContainer = document.createElement('div');
       buttonContainer.style.display = 'flex';
       buttonContainer.style.flexDirection = 'column';
       buttonContainer.style.alignItems = 'center';
       buttonContainer.style.margin = '0 8px';
       buttonContainer.style.minWidth = '140px';
-      
+
       const button = document.createElement('button');
       button.textContent = `${buildingType.icon} ${buildingType.name}`;
       button.style.padding = '8px 12px';
@@ -521,7 +582,7 @@ export class Game {
       button.style.fontWeight = '600';
       button.style.width = '100%';
       button.style.marginBottom = '0';
-      
+
       // Cost display
       const costDisplay = document.createElement('div');
       costDisplay.style.backgroundColor = '#34495e';
@@ -539,9 +600,9 @@ export class Game {
         const color = hasEnough ? '#2ecc71' : '#e74c3c';
         return `<span style="color: ${color}; font-weight: 500;">${cost} ${resource}</span>`;
       });
-      
+
       costDisplay.innerHTML = costItems.join(' ');
-      
+
       if (!canBuild.canBuild) {
         button.title = canBuild.reason || 'Cannot build';
         button.disabled = true;
@@ -549,7 +610,7 @@ export class Game {
         button.title = buildingType.description;
         button.addEventListener('click', () => this.buildBuilding(buildingType.id));
       }
-      
+
       buttonContainer.appendChild(button);
       buttonContainer.appendChild(costDisplay);
       return buttonContainer;
@@ -562,7 +623,7 @@ export class Game {
     headerDiv.style.fontWeight = 'bold';
     headerDiv.style.marginRight = '20px';
     headerDiv.textContent = '🏗️ Construct:';
-    
+
     contentArea.appendChild(headerDiv);
     buildButtons.forEach(button => contentArea.appendChild(button));
   }
@@ -599,14 +660,14 @@ export class Game {
     const techButtons = availableTechs.map(tech => {
       const canResearch = this.techSystem.canResearch(tech.id);
       const hasEnoughResearch = city.resources.research >= tech.cost.research;
-      
+
       const buttonContainer = document.createElement('div');
       buttonContainer.style.display = 'flex';
       buttonContainer.style.flexDirection = 'column';
       buttonContainer.style.alignItems = 'center';
       buttonContainer.style.margin = '0 8px';
       buttonContainer.style.minWidth = '140px';
-      
+
       const button = document.createElement('button');
       button.textContent = `${tech.icon} ${tech.name}`;
       button.style.padding = '8px 12px';
@@ -619,7 +680,7 @@ export class Game {
       button.style.fontWeight = '600';
       button.style.width = '100%';
       button.style.marginBottom = '0';
-      
+
       // Cost display
       const costDisplay = document.createElement('div');
       costDisplay.style.backgroundColor = '#34495e';
@@ -635,9 +696,9 @@ export class Game {
       const cost = tech.cost.research;
       const hasEnough = available >= cost;
       const color = hasEnough ? '#2ecc71' : '#e74c3c';
-      
+
       costDisplay.innerHTML = `<span style="color: ${color}; font-weight: 500;">${cost} research</span><br><span style="color: #95a5a6; font-size: 10px;">${tech.researchTime}s</span>`;
-      
+
       if (!canResearch.canResearch) {
         button.title = canResearch.reason || 'Cannot research';
         button.disabled = true;
@@ -652,7 +713,7 @@ export class Game {
         button.title = tech.description;
         button.addEventListener('click', () => this.startResearch(tech.id));
       }
-      
+
       buttonContainer.appendChild(button);
       buttonContainer.appendChild(costDisplay);
       return buttonContainer;
@@ -688,15 +749,15 @@ export class Game {
     if (result.success) {
       console.log(`Built ${result.building?.name} successfully!`);
       this.refreshManagementBar();
+      this.saveGame();
     } else {
       console.log(`Failed to build: ${result.error}`);
-      // Could show a notification to the user here
     }
   }
 
   private setupWorkerButtons() {
     if (!this.leftSidebar) return;
-    
+
     // Worker assignment buttons
     const workerButtons = this.leftSidebar.querySelectorAll('.worker-btn');
     workerButtons.forEach(button => {
@@ -704,9 +765,9 @@ export class Game {
         const target = e.target as HTMLButtonElement;
         const action = target.dataset.action;
         const buildingType = target.dataset.buildingType;
-        
+
         if (!action || !buildingType) return;
-        
+
         if (action === 'assign') {
           if (this.citySystem.assignWorkerToType(buildingType)) {
             console.log('Worker assigned to', buildingType);
@@ -739,12 +800,12 @@ export class Game {
     // Update left sidebar
     this.updateLeftSidebar();
     this.setupWorkerButtons();
-    
+
     // Check if research building status has changed and recreate tabs if needed
     const hasResearchBuilding = this.citySystem.hasResearchBuilding();
     const currentTabs = this.managementBar?.querySelectorAll('button').length || 0;
     const expectedTabs = hasResearchBuilding ? 2 : 1;
-    
+
     if (currentTabs !== expectedTabs) {
       // Research building status changed, recreate the entire management bar
       if (this.managementBar) {
@@ -760,36 +821,38 @@ export class Game {
 
   private startGameTick() {
     if (this.gameTickInterval) return; // Already running
-    
+
     // Generate resources every 2 seconds
     this.gameTickInterval = window.setInterval(() => {
       if (this.citySystem.hasCity()) {
         this.citySystem.generateResources();
-        
+
         // Update research progress
         const researchUpdate = this.techSystem.updateResearch();
         if (researchUpdate.completed) {
           const tech = this.techSystem.getTechTypes().find(t => t.id === researchUpdate.completed);
           if (tech) {
             console.log(`Research completed: ${tech.name}`);
-            // TODO: Add story message for research completion
           }
         }
-        
+
         this.refreshManagementBar();
         this.updateLeftSidebar(); // Update sidebar with terrain bonuses
         this.setupWorkerButtons(); // Re-setup event listeners after innerHTML update
-        
-        // Update city UI with current resources 
+
+        // Update city UI with current resources
         const city = this.citySystem.getCity()!;
         this.renderer.updateCityUI(city);
+
+        // Auto-save every tick
+        this.saveGame();
       }
     }, 2000);
   }
 
   private render() {
     const settler = this.settlerSystem.getSettler();
-    
+
     if (!this.citySystem.hasCity()) {
       this.renderer.renderSettler(settler);
     } else {
@@ -863,7 +926,7 @@ export class Game {
     this.storyPanel.appendChild(header);
     this.storyPanel.appendChild(messagesContainer);
     document.body.appendChild(this.storyPanel);
-    
+
     this.updateStoryPanel();
   }
 
@@ -874,7 +937,7 @@ export class Game {
     if (!messagesContainer) return;
 
     const messages = this.storySystem.getMessages();
-    
+
     if (messages.length === 0) {
       messagesContainer.innerHTML = '<div style="color: #7f8c8d; text-align: center; padding: 20px; font-style: italic;">Your settlement\'s story begins...</div>';
       return;
@@ -884,7 +947,7 @@ export class Game {
     const messagesHTML = messages.map((message, index) => {
       const timeAgo = this.getTimeAgo(message.timestamp);
       const isLatest = index === messages.length - 1;
-      
+
       return `
         <div style="margin-bottom: 15px; padding: 12px; background: ${isLatest ? 'rgba(241, 196, 15, 0.1)' : 'rgba(255,255,255,0.05)'}; border-radius: 6px; border-left: 3px solid ${isLatest ? '#f1c40f' : '#34495e'};">
           <div style="font-weight: bold; color: #f39c12; margin-bottom: 6px; font-size: 12px;">
@@ -898,7 +961,7 @@ export class Game {
     }).join('');
 
     messagesContainer.innerHTML = messagesHTML;
-    
+
     // Auto-scroll to bottom to show latest message
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
@@ -909,7 +972,7 @@ export class Game {
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-    
+
     if (hours > 0) {
       return `${hours}h ago`;
     } else if (minutes > 0) {
@@ -931,7 +994,7 @@ export class Game {
       'pop_5': 'Growing Community',
       'pop_10': 'Thriving Village'
     };
-    
+
     return titles[messageId] || 'Settlement News';
   }
 
@@ -981,27 +1044,30 @@ export class Game {
   }
 
   destroy() {
+    // Save before destroying
+    this.saveGame();
+
     this.inputSystem.destroy();
     this.renderer.destroy();
-    
+
     // Clean up game tick
     if (this.gameTickInterval) {
       clearInterval(this.gameTickInterval);
       this.gameTickInterval = null;
     }
-    
+
     // Clean up management bar
     if (this.managementBar) {
       document.body.removeChild(this.managementBar);
       this.managementBar = null;
     }
-    
+
     // Clean up left sidebar
     if (this.leftSidebar) {
       document.body.removeChild(this.leftSidebar);
       this.leftSidebar = null;
     }
-    
+
     // Clean up story panel
     if (this.storyPanel) {
       document.body.removeChild(this.storyPanel);
@@ -1013,7 +1079,7 @@ export class Game {
       document.body.removeChild(this.mobileToggles);
       this.mobileToggles = null;
     }
-    
+
     // Clean up settlement UI
     if (this.settlementUI && this.settlementUI.parentElement) {
       this.settlementUI.parentElement.removeChild(this.settlementUI);

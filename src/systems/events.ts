@@ -58,6 +58,14 @@ export class StorySystem {
     this.addMessage(`building_${buildingName}`, message);
   }
 
+  exportState(): StoryMessage[] {
+    return [...this.messages];
+  }
+
+  importState(messages: StoryMessage[]): void {
+    this.messages = [...messages];
+  }
+
   populationGrowth(newPopulation: number) {
     if (newPopulation === 2) {
       this.addMessage('pop_2', 'A traveling family has decided to join your settlement, drawn by the promise of a new life.');

@@ -7,6 +7,11 @@ export interface Settler {
   maxFood: number;
 }
 
+export interface SettlerSaveData {
+  position: HexCoordinate;
+  food: number;
+}
+
 export class SettlerSystem {
   private settler: Settler;
 
@@ -17,6 +22,18 @@ export class SettlerSystem {
       food: 20,
       maxFood: 20
     };
+  }
+
+  exportState(): SettlerSaveData {
+    return {
+      position: { ...this.settler.position },
+      food: this.settler.food
+    };
+  }
+
+  importState(data: SettlerSaveData): void {
+    this.settler.position = { ...data.position };
+    this.settler.food = data.food;
   }
 
   getSettler(): Settler {

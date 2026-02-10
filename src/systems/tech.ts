@@ -137,6 +137,18 @@ export class TechSystem {
     return this.researchedTechs.has(techId);
   }
 
+  exportState(): { researchedTechs: string[]; currentResearch: ResearchProgress | null } {
+    return {
+      researchedTechs: Array.from(this.researchedTechs),
+      currentResearch: this.currentResearch ? { ...this.currentResearch } : null
+    };
+  }
+
+  importState(data: { researchedTechs: string[]; currentResearch: ResearchProgress | null }): void {
+    this.researchedTechs = new Set(data.researchedTechs);
+    this.currentResearch = data.currentResearch ? { ...data.currentResearch } : null;
+  }
+
   getTechEffects(): {
     workerEfficiency: number;
     foodProduction: number;
