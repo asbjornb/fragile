@@ -58,12 +58,14 @@
 - Mouse click handling with camera offset compensation
 - Hex coordinate conversion from screen coordinates
 - Adjacent-only movement validation
+- Touch-optimized via CSS `touch-action: manipulation`
 
 **Game Controller** (`src/core/game.ts`)
 - Orchestrates all systems
 - Handles movement logic and validation
 - Manages animation callbacks
 - Controls phase transitions (exploration → city management)
+- Mobile-responsive layout with toggleable overlay sidebars (<768px)
 
 **City Management** (`src/entities/city.ts`)
 - Population and worker management

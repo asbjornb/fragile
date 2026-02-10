@@ -40,3 +40,13 @@ p {
   width: 100%;
   min-height: 0;
 }
+
+#game-container canvas {
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  #app {
+    height: 100dvh;
+  }
+}
