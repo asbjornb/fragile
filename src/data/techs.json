@@ -140,6 +140,20 @@
       },
       "unlocks": [],
       "unlocksBuildings": ["stoneworks", "monument"]
+    },
+    "defenses": {
+      "id": "defenses",
+      "name": "Defenses",
+      "description": "Military fortifications protect against raids and threats",
+      "icon": "🏰",
+      "cost": {
+        "research": 20
+      },
+      "researchTime": 50,
+      "prerequisites": ["basic_tools"],
+      "effects": {},
+      "unlocks": [],
+      "unlocksBuildings": ["watchtower"]
     }
   }
 }

@@ -1,10 +1,11 @@
 import { HexCoordinate, HexUtils } from './hex';
 import { HexRenderer } from './renderer';
 import { SettlerSystem } from '../entities/settler';
-import { CitySystem } from '../entities/city';
+import { CitySystem, Season } from '../entities/city';
 import { InputSystem } from '../systems/input';
-import { StorySystem } from '../systems/events';
+import { StorySystem, EventSystem } from '../systems/events';
 import { TechSystem } from '../systems/tech';
+import { PrestigeSystem } from '../systems/prestige';
 import { SaveSystem, SaveData } from './save';
 
 export class Game {
@@ -14,6 +15,8 @@ export class Game {
   private inputSystem: InputSystem;
   private storySystem: StorySystem;
   private techSystem: TechSystem;
+  private eventSystem: EventSystem;
+  private prestigeSystem: PrestigeSystem;
   private settleButton: HTMLButtonElement | null = null;
   private settlementUI: HTMLDivElement | null = null;
   private managementBar: HTMLDivElement | null = null;
@@ -24,6 +27,7 @@ export class Game {
   private mobileToggles: HTMLDivElement | null = null;
   private displayedBuildingIds: string[] = [];
   private displayedResearchState: string = '';
+  private collapsed: boolean = false;
 
   constructor(container: HTMLElement, saveData?: SaveData) {
     const seed = saveData?.seed;
@@ -32,6 +36,8 @@ export class Game {
     this.citySystem = new CitySystem(this.renderer.getWorldGenerator());
     this.storySystem = new StorySystem();
     this.techSystem = new TechSystem();
+    this.eventSystem = new EventSystem();
+    this.prestigeSystem = new PrestigeSystem();
     this.inputSystem = new InputSystem(
       this.renderer.getCanvas(),
       () => this.renderer.getCameraOffset()
@@ -74,6 +80,14 @@ export class Game {
     this.renderer.getVisibilitySystem().importState(data.exploredHexes);
     this.currentTab = data.currentTab;
 
+    // Restore event system state
+    if (data.eventState) {
+      this.eventSystem.importState(data.eventState);
+    }
+    if (data.harshWinter) {
+      this.citySystem.setHarshWinter(data.harshWinter);
+    }
+
     // Apply tech effects and building unlocks from researched techs
     this.citySystem.setTechEffects(this.techSystem.getTechEffects());
     const techBuildings = this.techSystem.getUnlockedBuildings();
@@ -93,7 +107,7 @@ export class Game {
     const techState = this.techSystem.exportState();
 
     const data: SaveData = {
-      version: 1,
+      version: 2,
       timestamp: Date.now(),
       seed: this.renderer.getWorldGenerator().getSeed(),
       phase: this.citySystem.hasCity() ? 'city' : 'exploration',
@@ -104,7 +118,9 @@ export class Game {
       currentResearch: techState.currentResearch,
       exploredHexes: visState,
       storyMessages: this.storySystem.exportState(),
-      currentTab: this.currentTab
+      currentTab: this.currentTab,
+      eventState: this.eventSystem.exportState(),
+      harshWinter: this.citySystem.isHarshWinter()
     };
 
     SaveSystem.save(data);
@@ -385,22 +401,40 @@ export class Game {
     const buildingsContainer = this.leftSidebar.querySelector('[data-scroll-id="buildings-list"]') as HTMLElement | null;
     const buildingsScrollTop = buildingsContainer?.scrollTop ?? 0;
 
+    // Season and year display
+    const season = this.citySystem.getSeason();
+    const year = this.citySystem.getYear();
+    const seasonIcons: Record<string, string> = { spring: '🌱', summer: '☀️', autumn: '🍂', winter: '❄️' };
+    const seasonNames: Record<string, string> = { spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter' };
+    const harshWinter = this.citySystem.isHarshWinter();
+
+    // Unrest display
+    const unrestColor = city.unrest > 70 ? '#e74c3c' : city.unrest > 40 ? '#f39c12' : '#2ecc71';
+    const integrityColor = city.integrity > 70 ? '#2ecc71' : city.integrity > 30 ? '#f39c12' : '#e74c3c';
+
     this.leftSidebar.innerHTML = `
       <h2 style="margin: 0 0 15px 0; font-size: 20px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">${city.name}</h2>
+
+      <div style="margin-bottom: 12px; padding: 8px 10px; background: ${season === 'winter' ? (harshWinter ? '#4a1a1a' : '#1a2a4a') : '#34495e'}; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 14px;">${seasonIcons[season]} ${seasonNames[season]}${harshWinter ? ' (Harsh!)' : ''}</span>
+        <span style="font-size: 12px; color: #95a5a6;">Year ${year}</span>
+      </div>
 
       <div style="margin-bottom: 20px; padding: 10px; background: #34495e; border-radius: 6px;">
         <h3 style="margin: 0 0 10px 0; font-size: 16px;">📊 City Status</h3>
         <div style="font-size: 14px;">
           <div style="margin: 4px 0;">Population: <span style="color: #f39c12; font-weight: bold;">${city.population}/${city.maxPopulation}</span></div>
           <div style="margin: 4px 0;">Available Workers: <span style="color: #2ecc71; font-weight: bold;">${city.availableWorkers}</span></div>
-          <div style="margin: 4px 0;">Integrity: <span style="color: #e74c3c; font-weight: bold;">${city.integrity}</span></div>
+          <div style="margin: 4px 0;">Integrity: <span style="color: ${integrityColor}; font-weight: bold;">${city.integrity}/${city.maxIntegrity}</span></div>
+          <div style="margin: 4px 0;">Unrest: <span style="color: ${unrestColor}; font-weight: bold;">${city.unrest}/${city.maxUnrest}</span>${city.unrest > 70 ? ' <span style="color: #e74c3c; font-size: 11px;">(Danger!)</span>' : ''}</div>
+          ${city.defenseRating > 0 ? `<div style="margin: 4px 0;">Defense: <span style="color: #3498db; font-weight: bold;">${city.defenseRating}</span></div>` : ''}
         </div>
       </div>
 
       <div style="margin-bottom: 20px; padding: 10px; background: #34495e; border-radius: 6px;">
         <h3 style="margin: 0 0 10px 0; font-size: 16px;">💰 Resources</h3>
         <div style="font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-          <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span> <span style="color: #e74c3c; font-size: 11px;">(-${this.citySystem.getFoodConsumption()}/tick)</span>${bonuses.food > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.food}%)</span>` : ''}</div>
+          <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span> <span style="color: #e74c3c; font-size: 11px;">(-${this.citySystem.getFoodConsumption()}/tick)</span>${bonuses.food > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.food}%)</span>` : ''}${season === 'winter' ? ` <span style="color: #3498db; font-size: 11px;">(${harshWinter ? '-75%' : '-50%'} winter)</span>` : ''}</div>
           <div>Wood: <span style="color: #8b4513; font-weight: bold;">${city.resources.wood}/${city.storage.wood}</span>${bonuses.wood > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.wood}%)</span>` : ''}</div>
           <div>Stone: <span style="color: #95a5a6; font-weight: bold;">${city.resources.stone}/${city.storage.stone}</span>${bonuses.stone > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.stone}%)</span>` : ''}</div>
           ${this.citySystem.hasResearchBuilding() ? `<div>Research: <span style="color: #9b59b6; font-weight: bold;">${city.resources.research}</span></div>` : ''}
@@ -995,11 +1029,52 @@ export class Game {
 
     // Generate resources every 2 seconds
     this.gameTickInterval = window.setInterval(() => {
-      if (this.citySystem.hasCity()) {
+      if (this.citySystem.hasCity() && !this.collapsed) {
         // Update tech effects each tick
         this.citySystem.setTechEffects(this.techSystem.getTechEffects());
 
         const result = this.citySystem.generateResources();
+
+        // Season change story messages
+        if (result.seasonChanged) {
+          this.handleSeasonChange(result.seasonChanged);
+        }
+        if (result.yearChanged) {
+          this.storySystem.addMessage('year_change', `Year ${result.yearChanged} begins. The settlement endures.`);
+        }
+
+        // Process dynamic events
+        const city = this.citySystem.getCity()!;
+        const events = this.eventSystem.checkForEvents(
+          city,
+          this.citySystem.getSeason(),
+          this.citySystem.isHarshWinter()
+        );
+
+        for (const event of events) {
+          // Apply event effects
+          if (event.effects.setHarshWinter) {
+            this.citySystem.setHarshWinter(true);
+          }
+          if (event.effects.integrityDamage) {
+            this.citySystem.applyIntegrityDamage(event.effects.integrityDamage);
+          }
+          if (event.effects.populationLoss) {
+            this.citySystem.applyPopulationLoss(event.effects.populationLoss);
+          }
+          if (event.effects.resourceDamage) {
+            for (const rd of event.effects.resourceDamage) {
+              this.citySystem.applyResourceDamage(rd.resource, rd.amount);
+            }
+          }
+          // Add story message for the event
+          this.storySystem.addMessage(event.storyId, event.storyText);
+        }
+
+        // Check for starvation story (throttled - only every 10 ticks)
+        if (result.starving && city.tickCount % 10 === 0) {
+          this.storySystem.addMessage('event_starvation', 'The people are starving! Food stores are empty. Unrest grows as hunger gnaws at empty bellies.');
+        }
 
         // Trigger population growth story messages
         if (result.populationGrew) {
@@ -1021,16 +1096,127 @@ export class Game {
           }
         }
 
+        // Check for collapse
+        if (this.citySystem.isCollapsed()) {
+          this.handleCollapse();
+          return;
+        }
+
         this.refreshManagementBar(); // Also updates left sidebar and worker buttons
 
         // Update city UI with current resources
-        const city = this.citySystem.getCity()!;
-        this.renderer.updateCityUI(city);
+        const updatedCity = this.citySystem.getCity()!;
+        this.renderer.updateCityUI(updatedCity);
 
         // Auto-save every tick
         this.saveGame();
       }
     }, 2000);
+  }
+
+  private handleSeasonChange(season: Season): void {
+    const seasonMessages: Record<Season, string> = {
+      spring: 'The snow melts and flowers bloom. Spring brings renewed hope and growth to the settlement.',
+      summer: 'The sun shines bright and warm. Summer brings abundance and long days of productive labor.',
+      autumn: 'Leaves turn golden and the air grows crisp. Time to prepare stores for the coming cold.',
+      winter: 'Cold winds howl through the settlement. Winter has arrived — food production will suffer.'
+    };
+    this.storySystem.addMessage(`season_${season}`, seasonMessages[season]);
+  }
+
+  private handleCollapse(): void {
+    this.collapsed = true;
+
+    // Stop game tick
+    if (this.gameTickInterval) {
+      clearInterval(this.gameTickInterval);
+      this.gameTickInterval = null;
+    }
+
+    const city = this.citySystem.getCity()!;
+    const collapseReason = this.citySystem.getCollapseReason();
+    const techsResearched = this.techSystem.getResearchedTechs().length;
+
+    // Record in prestige system
+    const run = this.prestigeSystem.recordCollapse(city, techsResearched, collapseReason);
+
+    // Add collapse story
+    this.storySystem.addMessage('collapse', collapseReason);
+
+    // Delete save (city is gone)
+    SaveSystem.deleteSave();
+
+    // Show collapse screen
+    this.showCollapseScreen(run, collapseReason);
+  }
+
+  private showCollapseScreen(run: import('../systems/prestige').LegacyRun, reason: string): void {
+    // Remove all game UI
+    if (this.managementBar) {
+      document.body.removeChild(this.managementBar);
+      this.managementBar = null;
+    }
+    if (this.leftSidebar) {
+      document.body.removeChild(this.leftSidebar);
+      this.leftSidebar = null;
+    }
+    if (this.storyPanel) {
+      document.body.removeChild(this.storyPanel);
+      this.storyPanel = null;
+    }
+    if (this.mobileToggles) {
+      document.body.removeChild(this.mobileToggles);
+      this.mobileToggles = null;
+    }
+
+    const legacy = this.prestigeSystem.getLegacyData();
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; align-items: center; justify-content: center; font-family: Arial, sans-serif;';
+
+    overlay.innerHTML = `
+      <div style="max-width: 500px; width: 90%; background: #1a1a2e; border: 2px solid #e74c3c; border-radius: 12px; padding: 40px; color: white; text-align: center;">
+        <h1 style="color: #e74c3c; font-size: 32px; margin: 0 0 10px 0;">Civilization Collapsed</h1>
+        <p style="color: #95a5a6; font-size: 14px; margin: 0 0 30px 0; font-style: italic;">${reason}</p>
+
+        <div style="background: #16213e; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
+          <h3 style="color: #f39c12; margin: 0 0 15px 0; font-size: 16px;">Legacy of ${run.cityName}</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+            <div>Peak Population: <span style="color: #3498db; font-weight: bold;">${run.population}</span></div>
+            <div>Ticks Survived: <span style="color: #3498db; font-weight: bold;">${run.ticksSurvived}</span></div>
+            <div>Winters Survived: <span style="color: #3498db; font-weight: bold;">${run.wintersSurvived}</span></div>
+            <div>Techs Researched: <span style="color: #3498db; font-weight: bold;">${run.techsResearched}</span></div>
+            <div>Buildings Built: <span style="color: #3498db; font-weight: bold;">${run.buildingsBuilt}</span></div>
+          </div>
+        </div>
+
+        <div style="background: #16213e; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+          <h3 style="color: #9b59b6; margin: 0 0 10px 0; font-size: 16px;">Relic Shards Earned: <span style="color: #f1c40f; font-size: 20px;">+${run.relicShardsEarned}</span></h3>
+          <div style="font-size: 12px; color: #7f8c8d;">Total Shards: ${legacy.totalRelicShards} | Past Civilizations: ${legacy.runs.length}</div>
+          ${legacy.bonuses.productionBonus > 0 || legacy.bonuses.startingFood > 0 || legacy.bonuses.buildingCostReduction > 0 ? `
+            <div style="margin-top: 10px; font-size: 12px; color: #2ecc71;">
+              Legacy Bonuses:
+              ${legacy.bonuses.productionBonus > 0 ? `+${Math.round(legacy.bonuses.productionBonus * 100)}% production` : ''}
+              ${legacy.bonuses.startingFood > 0 ? ` | +${legacy.bonuses.startingFood} starting food` : ''}
+              ${legacy.bonuses.buildingCostReduction > 0 ? ` | -${Math.round(legacy.bonuses.buildingCostReduction * 100)}% building costs` : ''}
+            </div>
+          ` : ''}
+        </div>
+
+        <button id="btn-new-run" style="padding: 14px 40px; font-size: 18px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+          Begin Anew
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('btn-new-run')?.addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      this.destroy();
+      // Reload the page to start fresh
+      window.location.reload();
+    });
   }
 
   private render() {
@@ -1186,6 +1372,8 @@ export class Game {
       'building_granary': 'Food Preservation',
       'building_warehouse': 'Storage Expansion',
       'building_hunters_lodge': 'Hunting Grounds',
+      'building_watchtower': 'Fortification',
+      'building_guard_post': 'Defense',
       'tech_basic_tools': 'Discovery',
       'tech_advanced_tools': 'Innovation',
       'tech_specialized_tools': 'Mastery',
@@ -1195,9 +1383,24 @@ export class Game {
       'tech_hunting': 'Hunting Mastery',
       'tech_construction': 'Building Techniques',
       'tech_masonry': 'Masonry Arts',
+      'tech_defenses': 'Military Knowledge',
       'pop_2': 'New Arrivals',
       'pop_5': 'Growing Community',
-      'pop_10': 'Thriving Village'
+      'pop_10': 'Thriving Village',
+      'pop_15': 'Growing Town',
+      'pop_20': 'Town Council',
+      'season_spring': 'Spring Arrives',
+      'season_summer': 'Summer',
+      'season_autumn': 'Autumn',
+      'season_winter': 'Winter Comes',
+      'year_change': 'New Year',
+      'event_harsh_winter': 'Harsh Winter!',
+      'event_bandit_raid': 'Bandit Raid!',
+      'event_bandit_raid_defended': 'Raid Repelled',
+      'event_civil_unrest': 'Civil Unrest',
+      'event_civil_unrest_severe': 'Riots!',
+      'event_starvation': 'Famine',
+      'collapse': 'Collapse'
     };
 
     return titles[messageId] || 'Settlement News';

@@ -28,6 +28,9 @@ export interface City {
   };
   buildings: Building[];
   founded: number; // timestamp
+  tickCount: number;
+  defenseRating: number;
+  wintersSurvived: number;
 }
 
 export interface Building {
@@ -63,12 +66,35 @@ export interface BuildingType {
     woodStorage?: number;
     stoneStorage?: number;
     foodStorage?: number;
+    defenseRating?: number;
   };
   requiresWorker?: boolean;
   requiresTerrain?: string[];
   buildTime: number;
   maxLevel: number;
   icon: string;
+}
+
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+
+export const TICKS_PER_YEAR = 120;
+export const TICKS_PER_SEASON = 30;
+
+export function getSeason(tickCount: number): Season {
+  const seasonIndex = Math.floor((tickCount % TICKS_PER_YEAR) / TICKS_PER_SEASON);
+  const seasons: Season[] = ['spring', 'summer', 'autumn', 'winter'];
+  return seasons[seasonIndex];
+}
+
+export function getYear(tickCount: number): number {
+  return Math.floor(tickCount / TICKS_PER_YEAR) + 1;
+}
+
+export function getSeasonFoodMultiplier(season: Season, isHarshWinter: boolean): number {
+  if (season === 'winter') {
+    return isHarshWinter ? 0.25 : 0.5;
+  }
+  return 1.0;
 }
 
 export class CitySystem {
@@ -84,6 +110,7 @@ export class CitySystem {
     stoneProduction: 0,
     foodConsumptionReduction: 0
   };
+  private harshWinter: boolean = false;
 
   constructor(worldGenerator: WorldGenerator) {
     this.worldGenerator = worldGenerator;
@@ -97,8 +124,10 @@ export class CitySystem {
     this.unlockedBuildings.add('farm');
     this.unlockedBuildings.add('lumber_yard');
     this.unlockedBuildings.add('quarry');
+    this.unlockedBuildings.add('guard_post');
     // shed is unlocked later when wood storage is maxed
     // library is unlocked when population reaches 10
+    // watchtower is unlocked via Defenses tech
   }
 
   private loadBuildingData() {
@@ -146,7 +175,10 @@ export class CitySystem {
           maxWorkers: 0
         }
       ],
-      founded: Date.now()
+      founded: Date.now(),
+      tickCount: 0,
+      defenseRating: 0,
+      wintersSurvived: 0
     };
 
     // Check for initial unlocks
@@ -456,9 +488,96 @@ export class CitySystem {
     return Math.max(1, Math.ceil(baseConsumption * (1 - reduction)));
   }
 
+  // Season helpers
+  getSeason(): Season {
+    if (!this.city) return 'spring';
+    return getSeason(this.city.tickCount);
+  }
+
+  getYear(): number {
+    if (!this.city) return 1;
+    return getYear(this.city.tickCount);
+  }
+
+  isHarshWinter(): boolean {
+    return this.harshWinter;
+  }
+
+  setHarshWinter(harsh: boolean): void {
+    this.harshWinter = harsh;
+  }
+
+  getDefenseRating(): number {
+    if (!this.city) return 0;
+    return this.city.defenseRating;
+  }
+
+  // Apply damage from events
+  applyIntegrityDamage(damage: number): void {
+    if (!this.city) return;
+    this.city.integrity = Math.max(0, this.city.integrity - damage);
+  }
+
+  applyPopulationLoss(loss: number): void {
+    if (!this.city) return;
+    this.city.population = Math.max(0, this.city.population - loss);
+    this.applyBuildingEffects();
+  }
+
+  applyResourceDamage(resource: keyof City['resources'], amount: number): void {
+    if (!this.city) return;
+    this.city.resources[resource] = Math.max(0, this.city.resources[resource] - amount);
+  }
+
+  isCollapsed(): boolean {
+    if (!this.city) return false;
+    return this.city.population <= 0 || this.city.integrity <= 0;
+  }
+
+  getCollapseReason(): string {
+    if (!this.city) return '';
+    if (this.city.population <= 0) return 'Your people have all perished or fled. The settlement is no more.';
+    if (this.city.integrity <= 0) return 'The settlement has crumbled beyond repair. Nothing remains but ruins.';
+    return '';
+  }
+
+  incrementWintersSurvived(): void {
+    if (!this.city) return;
+    this.city.wintersSurvived++;
+  }
+
   // Resource production (called each tick)
-  generateResources(): { populationGrew?: number } {
+  generateResources(): { populationGrew?: number; seasonChanged?: Season; yearChanged?: number; starving?: boolean } {
     if (!this.city) return {};
+
+    const prevSeason = getSeason(this.city.tickCount);
+    this.city.tickCount++;
+    const currentSeason = getSeason(this.city.tickCount);
+    const currentYear = getYear(this.city.tickCount);
+
+    let seasonChanged: Season | undefined;
+    let yearChanged: number | undefined;
+
+    if (prevSeason !== currentSeason) {
+      seasonChanged = currentSeason;
+      // Track winter survival
+      if (prevSeason === 'winter') {
+        this.city.wintersSurvived++;
+      }
+      // Reset harsh winter at end of winter
+      if (prevSeason === 'winter') {
+        this.harshWinter = false;
+      }
+    }
+    if (prevSeason !== currentSeason && currentSeason === 'spring') {
+      yearChanged = currentYear;
+    }
+
+    // Recalculate defense rating from buildings
+    this.recalculateDefense();
+
+    // Season-based food production multiplier
+    const seasonMultiplier = getSeasonFoodMultiplier(currentSeason, this.harshWinter);
 
     // Base city production (no workers needed)
     this.city.resources.wood = Math.min(
@@ -474,12 +593,17 @@ export class CitySystem {
     const foodConsumed = this.getFoodConsumption();
     this.city.resources.food = Math.max(0, this.city.resources.food - foodConsumed);
 
+    const starving = this.city.resources.food === 0;
+
+    // Unrest mechanics
+    this.updateUnrest(starving);
+
     // Check for building unlocks after resource changes
     this.checkUnlocks();
 
     // Population growth (if we have food surplus and space)
     let populationGrew: number | undefined;
-    if (this.city.resources.food >= 3 && this.city.population < this.city.maxPopulation) {
+    if (this.city.resources.food >= 3 && this.city.population < this.city.maxPopulation && this.city.unrest < 50) {
       const growthChance = 0.2; // 20% chance per tick when conditions are met
       if (Math.random() < growthChance) {
         this.city.population++;
@@ -504,7 +628,7 @@ export class CitySystem {
 
       if (effects.foodPerTick) {
         const techFoodBonus = 1 + this.techEffects.foodProduction;
-        const production = Math.floor(effects.foodPerTick * workerRatio * building.level * productionMultiplier * workerEfficiencyBonus * techFoodBonus);
+        const production = Math.max(1, Math.floor(effects.foodPerTick * workerRatio * building.level * productionMultiplier * workerEfficiencyBonus * techFoodBonus * seasonMultiplier));
         this.city!.resources.food = Math.min(
           this.city!.resources.food + production,
           this.city!.storage.food
@@ -531,7 +655,60 @@ export class CitySystem {
       }
     });
 
-    return populationGrew ? { populationGrew } : {};
+    return {
+      ...(populationGrew ? { populationGrew } : {}),
+      ...(seasonChanged ? { seasonChanged } : {}),
+      ...(yearChanged ? { yearChanged } : {}),
+      ...(starving ? { starving } : {})
+    };
+  }
+
+  private updateUnrest(starving: boolean): void {
+    if (!this.city) return;
+
+    let unrestChange = 0;
+
+    // Starvation increases unrest significantly
+    if (starving) {
+      unrestChange += 5;
+    }
+
+    // High population ratio causes mild unrest
+    const popRatio = this.city.population / this.city.maxPopulation;
+    if (popRatio > 0.9) {
+      unrestChange += 2;
+    } else if (popRatio > 0.75) {
+      unrestChange += 1;
+    }
+
+    // Food surplus and low pop ratio reduce unrest
+    if (!starving && this.city.resources.food > 5) {
+      unrestChange -= 2;
+    }
+    if (popRatio < 0.5) {
+      unrestChange -= 1;
+    }
+
+    // Monuments reduce unrest
+    const monumentCount = this.city.buildings.filter(b => b.type === 'monument').length;
+    if (monumentCount > 0) {
+      unrestChange -= monumentCount;
+    }
+
+    this.city.unrest = Math.max(0, Math.min(this.city.maxUnrest, this.city.unrest + unrestChange));
+  }
+
+  private recalculateDefense(): void {
+    if (!this.city) return;
+    let defense = 0;
+    this.city.buildings.forEach(building => {
+      if (building.type === 'guard_post') {
+        defense += 10 * building.level;
+      } else if (building.type === 'watchtower') {
+        defense += 15 * building.level;
+      }
+    });
+    this.city.defenseRating = defense;
   }
 
   // Worker management
