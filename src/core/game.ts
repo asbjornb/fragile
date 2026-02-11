@@ -482,7 +482,11 @@ export class Game {
     this.managementBar.style.bottom = '0';
     this.managementBar.style.left = '0';
     this.managementBar.style.right = '0';
-    this.managementBar.style.height = '120px';
+    if (this.isMobile()) {
+      this.managementBar.style.maxHeight = '45vh';
+    } else {
+      this.managementBar.style.height = '120px';
+    }
     this.managementBar.style.backgroundColor = '#2c3e50';
     this.managementBar.style.borderTop = '1px solid #34495e';
     this.managementBar.style.display = 'flex';
@@ -528,17 +532,23 @@ export class Game {
 
     // Create content area
     const contentArea = document.createElement('div');
-    contentArea.style.flex = '1';
     contentArea.style.display = 'flex';
     contentArea.style.alignItems = 'center';
-    contentArea.style.justifyContent = 'center';
-    contentArea.style.padding = this.isMobile() ? '10px 15px' : '10px 320px';
-    contentArea.style.gap = '10px';
-    contentArea.style.overflowX = 'auto';
-    if (this.isMobile()) {
-      contentArea.style.justifyContent = 'flex-start';
-    }
     contentArea.id = 'management-content';
+    if (this.isMobile()) {
+      contentArea.style.flexWrap = 'wrap';
+      contentArea.style.justifyContent = 'center';
+      contentArea.style.padding = '8px 6px';
+      contentArea.style.gap = '6px';
+      contentArea.style.overflowY = 'auto';
+      contentArea.style.flex = '1';
+    } else {
+      contentArea.style.flex = '1';
+      contentArea.style.justifyContent = 'center';
+      contentArea.style.padding = '10px 320px';
+      contentArea.style.gap = '10px';
+      contentArea.style.overflowX = 'auto';
+    }
 
     this.managementBar.appendChild(tabHeader);
     this.managementBar.appendChild(contentArea);
@@ -618,10 +628,11 @@ export class Game {
     if (!city) return;
 
     const availableBuildings = this.citySystem.getBuildingTypes();
-    // Children: [headerDiv, ...buttonContainers]
+    const headerOffset = this.isMobile() ? 0 : 1; // No header on mobile
+    // Children: [headerDiv?, ...buttonContainers]
     for (let i = 0; i < availableBuildings.length; i++) {
       const buildingType = availableBuildings[i];
-      const buttonContainer = contentArea.children[i + 1] as HTMLElement; // +1 for header
+      const buttonContainer = contentArea.children[i + headerOffset] as HTMLElement;
       if (!buttonContainer) continue;
 
       const canBuild = this.citySystem.canBuildBuilding(buildingType.id);
@@ -654,10 +665,11 @@ export class Game {
     if (!city) return;
 
     const availableTechs = this.techSystem.getAvailableTechs();
-    // Children: [headerDiv, ...techContainers] (or [headerDiv, progressDiv] if researching)
+    const headerOffset = this.isMobile() ? 0 : 1; // No header on mobile
+    // Children: [headerDiv?, ...techContainers] (or [headerDiv?, progressDiv] if researching)
     for (let i = 0; i < availableTechs.length; i++) {
       const tech = availableTechs[i];
-      const buttonContainer = contentArea.children[i + 1] as HTMLElement;
+      const buttonContainer = contentArea.children[i + headerOffset] as HTMLElement;
       if (!buttonContainer) continue;
 
       const canResearch = this.techSystem.canResearch(tech.id);
@@ -689,6 +701,7 @@ export class Game {
     if (!city) return;
 
     const availableBuildings = this.citySystem.getBuildingTypes();
+    const mobile = this.isMobile();
     const buildButtons = availableBuildings.map(buildingType => {
       const canBuild = this.citySystem.canBuildBuilding(buildingType.id);
       const currentCost = this.citySystem.getCurrentBuildingCost(buildingType.id);
@@ -697,13 +710,18 @@ export class Game {
       buttonContainer.style.display = 'flex';
       buttonContainer.style.flexDirection = 'column';
       buttonContainer.style.alignItems = 'center';
-      buttonContainer.style.margin = '0 8px';
-      buttonContainer.style.minWidth = '140px';
+      if (mobile) {
+        buttonContainer.style.minWidth = '0';
+        buttonContainer.style.width = 'calc(33.3% - 6px)';
+      } else {
+        buttonContainer.style.margin = '0 8px';
+        buttonContainer.style.minWidth = '140px';
+      }
 
       const button = document.createElement('button');
       button.textContent = `${buildingType.icon} ${buildingType.name}`;
-      button.style.padding = '8px 12px';
-      button.style.fontSize = '14px';
+      button.style.padding = mobile ? '5px 4px' : '8px 12px';
+      button.style.fontSize = mobile ? '11px' : '14px';
       button.style.border = 'none';
       button.style.borderRadius = '6px 6px 0 0';
       button.style.cursor = canBuild.canBuild ? 'pointer' : 'not-allowed';
@@ -712,12 +730,17 @@ export class Game {
       button.style.fontWeight = '600';
       button.style.width = '100%';
       button.style.marginBottom = '0';
+      if (mobile) {
+        button.style.whiteSpace = 'nowrap';
+        button.style.overflow = 'hidden';
+        button.style.textOverflow = 'ellipsis';
+      }
 
       // Cost display
       const costDisplay = document.createElement('div');
       costDisplay.style.backgroundColor = '#34495e';
-      costDisplay.style.padding = '4px 8px';
-      costDisplay.style.fontSize = '11px';
+      costDisplay.style.padding = mobile ? '3px 4px' : '4px 8px';
+      costDisplay.style.fontSize = mobile ? '10px' : '11px';
       costDisplay.style.borderRadius = '0 0 6px 6px';
       costDisplay.style.width = '100%';
       costDisplay.style.boxSizing = 'border-box';
@@ -742,15 +765,16 @@ export class Game {
       return buttonContainer;
     });
 
-    // Add construction header
-    const headerDiv = document.createElement('div');
-    headerDiv.style.color = 'white';
-    headerDiv.style.fontSize = '18px';
-    headerDiv.style.fontWeight = 'bold';
-    headerDiv.style.marginRight = '20px';
-    headerDiv.textContent = '🏗️ Construct:';
-
-    contentArea.appendChild(headerDiv);
+    // Add construction header (skip on mobile to save space)
+    if (!mobile) {
+      const headerDiv = document.createElement('div');
+      headerDiv.style.color = 'white';
+      headerDiv.style.fontSize = '18px';
+      headerDiv.style.fontWeight = 'bold';
+      headerDiv.style.marginRight = '20px';
+      headerDiv.textContent = '🏗️ Construct:';
+      contentArea.appendChild(headerDiv);
+    }
     buildButtons.forEach(button => contentArea.appendChild(button));
   }
 
@@ -760,22 +784,26 @@ export class Game {
 
     const availableTechs = this.techSystem.getAvailableTechs();
     const currentResearch = this.techSystem.getCurrentResearch();
+    const mobile = this.isMobile();
 
-    // Header
-    const headerDiv = document.createElement('div');
-    headerDiv.style.color = 'white';
-    headerDiv.style.fontSize = '18px';
-    headerDiv.style.fontWeight = 'bold';
-    headerDiv.style.marginRight = '20px';
-    headerDiv.textContent = '🔬 Research:';
-    contentArea.appendChild(headerDiv);
+    // Header (skip on mobile to save space)
+    if (!mobile) {
+      const headerDiv = document.createElement('div');
+      headerDiv.style.color = 'white';
+      headerDiv.style.fontSize = '18px';
+      headerDiv.style.fontWeight = 'bold';
+      headerDiv.style.marginRight = '20px';
+      headerDiv.textContent = '🔬 Research:';
+      contentArea.appendChild(headerDiv);
+    }
 
     // Show current research progress if any
     if (currentResearch) {
       const progressDiv = document.createElement('div');
       progressDiv.style.color = '#f39c12';
-      progressDiv.style.fontSize = '14px';
+      progressDiv.style.fontSize = mobile ? '13px' : '14px';
       progressDiv.style.marginRight = '20px';
+      if (mobile) progressDiv.style.width = '100%';
       const tech = this.techSystem.getTechTypes().find(t => t.id === currentResearch.techId);
       progressDiv.textContent = `Researching ${tech?.name}: ${Math.floor(currentResearch.progress)}%`;
       contentArea.appendChild(progressDiv);
@@ -791,13 +819,18 @@ export class Game {
       buttonContainer.style.display = 'flex';
       buttonContainer.style.flexDirection = 'column';
       buttonContainer.style.alignItems = 'center';
-      buttonContainer.style.margin = '0 8px';
-      buttonContainer.style.minWidth = '140px';
+      if (mobile) {
+        buttonContainer.style.minWidth = '0';
+        buttonContainer.style.width = 'calc(33.3% - 6px)';
+      } else {
+        buttonContainer.style.margin = '0 8px';
+        buttonContainer.style.minWidth = '140px';
+      }
 
       const button = document.createElement('button');
       button.textContent = `${tech.icon} ${tech.name}`;
-      button.style.padding = '8px 12px';
-      button.style.fontSize = '14px';
+      button.style.padding = mobile ? '5px 4px' : '8px 12px';
+      button.style.fontSize = mobile ? '11px' : '14px';
       button.style.border = 'none';
       button.style.borderRadius = '6px 6px 0 0';
       button.style.cursor = (canResearch.canResearch && hasEnoughResearch) ? 'pointer' : 'not-allowed';
@@ -806,12 +839,17 @@ export class Game {
       button.style.fontWeight = '600';
       button.style.width = '100%';
       button.style.marginBottom = '0';
+      if (mobile) {
+        button.style.whiteSpace = 'nowrap';
+        button.style.overflow = 'hidden';
+        button.style.textOverflow = 'ellipsis';
+      }
 
       // Cost display
       const costDisplay = document.createElement('div');
       costDisplay.style.backgroundColor = '#34495e';
-      costDisplay.style.padding = '4px 8px';
-      costDisplay.style.fontSize = '11px';
+      costDisplay.style.padding = mobile ? '3px 4px' : '4px 8px';
+      costDisplay.style.fontSize = mobile ? '10px' : '11px';
       costDisplay.style.borderRadius = '0 0 6px 6px';
       costDisplay.style.width = '100%';
       costDisplay.style.boxSizing = 'border-box';
@@ -850,7 +888,7 @@ export class Game {
     if (availableTechs.length === 0) {
       const noTechsDiv = document.createElement('div');
       noTechsDiv.style.color = '#7f8c8d';
-      noTechsDiv.style.fontSize = '14px';
+      noTechsDiv.style.fontSize = mobile ? '12px' : '14px';
       noTechsDiv.textContent = 'No research available - complete prerequisites first';
       contentArea.appendChild(noTechsDiv);
     }

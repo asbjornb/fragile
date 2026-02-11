@@ -72,7 +72,7 @@
 - Handles movement logic and validation
 - Manages animation callbacks
 - Controls phase transitions (exploration → city management)
-- Mobile-responsive layout with toggleable overlay sidebars (<768px)
+- Mobile-responsive layout with toggleable overlay sidebars (<768px), compact wrapping building/research grid on mobile
 - Save/load integration with full state restoration
 
 **City Management** (`src/entities/city.ts`)
