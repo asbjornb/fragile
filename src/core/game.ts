@@ -929,7 +929,9 @@ export class Game {
 
     // Check if research building status has changed and recreate tabs if needed
     const hasResearchBuilding = this.citySystem.hasResearchBuilding();
-    const currentTabs = this.managementBar?.querySelectorAll('button').length || 0;
+    // Only count tab buttons in the tab header (first child), not building buttons in content area
+    const tabHeader = this.managementBar?.children[0];
+    const currentTabs = tabHeader?.querySelectorAll('button').length || 0;
     const expectedTabs = hasResearchBuilding ? 2 : 1;
 
     if (currentTabs !== expectedTabs) {
@@ -937,10 +939,12 @@ export class Game {
       if (this.managementBar) {
         document.body.removeChild(this.managementBar);
         this.managementBar = null;
+        this.displayedBuildingIds = [];
+        this.displayedResearchState = '';
         this.setupCityManagement();
       }
     } else {
-      // Just refresh tab content
+      // Just refresh tab content (in-place update when possible)
       this.updateTabContent();
     }
   }
