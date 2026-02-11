@@ -28,7 +28,8 @@
       "effects": {
         "workerEfficiency": 0.2
       },
-      "unlocks": ["specialized_tools"]
+      "unlocks": ["specialized_tools"],
+      "unlocksBuildings": ["sawmill"]
     },
     "specialized_tools": {
       "id": "specialized_tools",
@@ -73,7 +74,8 @@
       "effects": {
         "foodProduction": 0.5
       },
-      "unlocks": ["preservation"]
+      "unlocks": ["preservation"],
+      "unlocksBuildings": ["bakery"]
     },
     "preservation": {
       "id": "preservation",
@@ -119,7 +121,8 @@
       "effects": {
         "buildingCostReduction": 0.1
       },
-      "unlocks": ["masonry"]
+      "unlocks": ["masonry"],
+      "unlocksBuildings": ["storehouse"]
     },
     "masonry": {
       "id": "masonry",
@@ -135,7 +138,8 @@
         "buildingCostReduction": 0.2,
         "stoneProduction": 0.2
       },
-      "unlocks": []
+      "unlocks": [],
+      "unlocksBuildings": ["stoneworks", "monument"]
     }
   }
 }

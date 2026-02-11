@@ -54,11 +54,20 @@
 ## 6 • Buildings & Tech (V1 subset)
 | Building | Prereq | Output / Effect | Base Cost | Scaling |
 |----------|--------|-----------------|-----------|---------|
-| Hut | None | +2 pop capacity. | 8 wood, 2 food | 1.10x exponential |
-| Farm | Plains adjacent | +1 food / tick (+5% per plains). | 5 wood, 2 stone | 1.15x exponential |
-| Shed | Wood storage maxed | +25 wood storage. | 10 wood | 1.08x exponential |
-| Lumber Yard | Forest adjacent | +1 wood / tick (+10% per forest). | 6 wood, 4 stone | 1.12x exponential |
-| Quarry | Hill adjacent | +1 stone / tick (+20% per hill). | 8 wood, 3 food | 1.20x exponential |
+| Hut | None | +2 pop capacity. | 8 wood, 2 food | 1.15x exponential |
+| Farm | Plains adjacent | +1 food / tick (+5% per plains). | 5 wood, 2 stone | 1.20x exponential |
+| Shed | Wood storage maxed | +25 wood storage. | 10 wood | 1.12x exponential |
+| Lumber Yard | Forest adjacent | +1 wood / tick (+10% per forest). | 6 wood, 4 stone | 1.18x exponential |
+| Quarry | Hill adjacent | +1 stone / tick (+20% per hill). | 8 wood, 3 food | 1.25x exponential |
+| Library | Population ≥ 10 | +1 research / tick. | 15 wood, 10 stone, 5 food | 1.30x exponential |
+| Granary | Food storage maxed | +20 food storage. | 12 wood, 5 stone | 1.15x exponential |
+| Warehouse | Stone storage maxed | +15 stone storage. | 15 wood, 8 stone | 1.18x exponential |
+| Hunter's Lodge | Tech "Hunting" | +1 food / tick (+10% per forest, +5% per plains). | 10 wood, 3 food | 1.20x exponential |
+| Stoneworks | Tech "Masonry" | +2 stone / tick (+20% per hill). Hill/mountain required. | 20 wood, 15 stone, 5 food | 1.30x exponential |
+| Sawmill | Tech "Advanced Tools" | +2 wood / tick (+10% per forest). Forest required. | 15 wood, 12 stone | 1.25x exponential |
+| Bakery | Tech "Crop Rotation" | +2 food / tick. | 12 wood, 10 stone | 1.25x exponential |
+| Monument | Tech "Masonry" | +5 pop capacity. | 10 wood, 30 stone, 10 food | 1.50x exponential |
+| Storehouse | Tech "Construction" | +15 food, +15 wood, +10 stone storage. | 20 wood, 15 stone | 1.20x exponential |
 | Watchtower | Tech "Defenses" | Extends city LOS; improves defense. | TBD | TBD |
 | Guard Post | None | Provides defense vs bandits/unrest (not a unit). | TBD | TBD |
 
