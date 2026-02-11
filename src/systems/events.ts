@@ -54,7 +54,12 @@ export class StorySystem {
       'library': 'Your settlement has grown into a proper community! The wisest citizens propose establishing a library to preserve knowledge and advance learning.',
       'granary': 'Food is going to waste! The elders propose building a granary to preserve your harvest and feed the growing population.',
       'warehouse': 'Stone piles are scattered everywhere. A proper warehouse would keep your building materials organized and protected.',
-      'hunters_lodge': 'Your scholars have studied the ways of the wild. Skilled hunters can now venture out to bring back game from the surrounding lands.'
+      'hunters_lodge': 'Your scholars have studied the ways of the wild. Skilled hunters can now venture out to bring back game from the surrounding lands.',
+      'stoneworks': 'Master masons have devised new techniques for cutting and shaping stone. A stoneworks will greatly increase your stone output.',
+      'sawmill': 'With advanced tools, your carpenters can now build a proper sawmill. Timber production will surge.',
+      'bakery': 'Rotating crops has yielded a surplus of grain. A bakery can turn it into bread to feed many more mouths.',
+      'monument': 'Your masons propose erecting a grand monument. Its presence would inspire settlers and attract newcomers from far away.',
+      'storehouse': 'Better construction methods allow for a large storehouse capable of holding all manner of supplies.'
     };
 
     const message = messages[buildingName] || `The settlement has discovered new construction techniques. ${buildingName} is now available to build.`;

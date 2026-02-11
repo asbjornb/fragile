@@ -11,8 +11,8 @@
 - **Fog-of-war system** with visibility and exploration tracking
 - **Resource management** with food consumption (20 starting food, -1 per move)
 - **City founding mechanics** with transition from exploration to city management
-- **Building system** with 8 building types (hut, farm, shed, lumber_yard, quarry, library, granary, warehouse, hunters_lodge)
-- **Progressive building unlocks** - storage buildings unlock when respective resource is maxed, library at population 10, hunter's lodge via Hunting tech
+- **Building system** with 14 building types (hut, farm, shed, lumber_yard, quarry, library, granary, warehouse, hunters_lodge, stoneworks, sawmill, bakery, monument, storehouse)
+- **Progressive building unlocks** - storage buildings unlock when respective resource is maxed, library at population 10, tech-gated buildings (hunter's lodge via Hunting, stoneworks/monument via Masonry, sawmill via Advanced Tools, bakery via Crop Rotation, storehouse via Construction)
 - **Terrain-based production bonuses** - buildings gain efficiency from terrain within radius (includes city center)
 - **Interactive terrain legend** - shows terrain types and production bonuses during exploration phase
 - **Clean UI organization** - exploration shows food counter, city mode hides top bar and uses organized left sidebar
@@ -99,19 +99,21 @@
 **Building Configuration** (`src/data/buildings.json`)
 ```json
 {
-  "hut": { "baseCost": { "wood": 8, "food": 2 }, "effects": { "populationCapacity": 2 } },
-  "farm": { "baseCost": { "wood": 5, "stone": 2 }, "effects": { "foodPerTick": 1 }, "requiresTerrain": ["plains"] },
-  "granary": { "baseCost": { "wood": 12, "stone": 5 }, "effects": { "foodStorage": 20 } },
-  "warehouse": { "baseCost": { "wood": 15, "stone": 8 }, "effects": { "stoneStorage": 15 } },
-  "hunters_lodge": { "baseCost": { "wood": 10, "food": 3 }, "effects": { "foodPerTick": 1 }, "requiresTerrain": ["forest", "plains"] }
-  // ... etc
+  "hut": { "baseCost": { "wood": 8, "food": 2 }, "effects": { "populationCapacity": 2 }, "scaling": 1.15 },
+  "farm": { "baseCost": { "wood": 5, "stone": 2 }, "effects": { "foodPerTick": 1 }, "requiresTerrain": ["plains"], "scaling": 1.20 },
+  "stoneworks": { "baseCost": { "wood": 20, "stone": 15, "food": 5 }, "effects": { "stonePerTick": 2 }, "requiresTerrain": ["hill", "mountain"], "scaling": 1.30 },
+  "sawmill": { "baseCost": { "wood": 15, "stone": 12 }, "effects": { "woodPerTick": 2 }, "requiresTerrain": ["forest"], "scaling": 1.25 },
+  "bakery": { "baseCost": { "wood": 12, "stone": 10 }, "effects": { "foodPerTick": 2 }, "scaling": 1.25 },
+  "monument": { "baseCost": { "wood": 10, "stone": 30, "food": 10 }, "effects": { "populationCapacity": 5 }, "scaling": 1.50 },
+  "storehouse": { "baseCost": { "wood": 20, "stone": 15 }, "effects": { "foodStorage": 15, "woodStorage": 15, "stoneStorage": 10 }, "scaling": 1.20 }
+  // ... etc (14 total)
 }
 ```
 
 **Tech Configuration** (`src/data/techs.json`)
 - 9 technologies across 3 branches: Tools, Agriculture, Construction
 - Tech effects: workerEfficiency, foodProduction, stoneProduction, buildingCostReduction, foodConsumptionReduction
-- Tech-based building unlocks (e.g., Hunting tech unlocks Hunter's Lodge)
+- Tech-based building unlocks (Hunting→Hunter's Lodge, Masonry→Stoneworks/Monument, Advanced Tools→Sawmill, Crop Rotation→Bakery, Construction→Storehouse)
 
 **Procedural Generation**
 - Deterministic seeded random using coordinate hashing

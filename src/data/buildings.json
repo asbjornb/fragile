@@ -9,7 +9,7 @@
         "food": 2
       },
       "pricing": {
-        "scalingFactor": 1.10,
+        "scalingFactor": 1.15,
         "scalingType": "exponential"
       },
       "effects": {
@@ -28,7 +28,7 @@
         "stone": 2
       },
       "pricing": {
-        "scalingFactor": 1.15,
+        "scalingFactor": 1.20,
         "scalingType": "exponential"
       },
       "effects": {
@@ -48,7 +48,7 @@
         "wood": 10
       },
       "pricing": {
-        "scalingFactor": 1.08,
+        "scalingFactor": 1.12,
         "scalingType": "exponential"
       },
       "effects": {
@@ -67,7 +67,7 @@
         "stone": 4
       },
       "pricing": {
-        "scalingFactor": 1.12,
+        "scalingFactor": 1.18,
         "scalingType": "exponential"
       },
       "effects": {
@@ -88,7 +88,7 @@
         "food": 3
       },
       "pricing": {
-        "scalingFactor": 1.20,
+        "scalingFactor": 1.25,
         "scalingType": "exponential"
       },
       "effects": {
@@ -110,7 +110,7 @@
         "food": 5
       },
       "pricing": {
-        "scalingFactor": 1.25,
+        "scalingFactor": 1.30,
         "scalingType": "exponential"
       },
       "effects": {
@@ -130,7 +130,7 @@
         "stone": 5
       },
       "pricing": {
-        "scalingFactor": 1.10,
+        "scalingFactor": 1.15,
         "scalingType": "exponential"
       },
       "effects": {
@@ -149,7 +149,7 @@
         "stone": 8
       },
       "pricing": {
-        "scalingFactor": 1.12,
+        "scalingFactor": 1.18,
         "scalingType": "exponential"
       },
       "effects": {
@@ -168,7 +168,7 @@
         "food": 3
       },
       "pricing": {
-        "scalingFactor": 1.15,
+        "scalingFactor": 1.20,
         "scalingType": "exponential"
       },
       "effects": {
@@ -179,6 +179,110 @@
       "buildTime": 2,
       "maxLevel": 3,
       "icon": "🏹"
+    },
+    "stoneworks": {
+      "id": "stoneworks",
+      "name": "Stoneworks",
+      "description": "Advanced stone cutting yields more from each quarry face",
+      "baseCost": {
+        "wood": 20,
+        "stone": 15,
+        "food": 5
+      },
+      "pricing": {
+        "scalingFactor": 1.30,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "stonePerTick": 2
+      },
+      "requiresWorker": true,
+      "requiresTerrain": ["hill", "mountain"],
+      "buildTime": 4,
+      "maxLevel": 2,
+      "icon": "🪨"
+    },
+    "sawmill": {
+      "id": "sawmill",
+      "name": "Sawmill",
+      "description": "Mechanized saws process timber far faster than hand tools",
+      "baseCost": {
+        "wood": 15,
+        "stone": 12
+      },
+      "pricing": {
+        "scalingFactor": 1.25,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "woodPerTick": 2
+      },
+      "requiresWorker": true,
+      "requiresTerrain": ["forest"],
+      "buildTime": 3,
+      "maxLevel": 2,
+      "icon": "🪚"
+    },
+    "bakery": {
+      "id": "bakery",
+      "name": "Bakery",
+      "description": "Bakers turn raw grain into nourishing bread for the settlement",
+      "baseCost": {
+        "wood": 12,
+        "stone": 10
+      },
+      "pricing": {
+        "scalingFactor": 1.25,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "foodPerTick": 2
+      },
+      "requiresWorker": true,
+      "buildTime": 3,
+      "maxLevel": 2,
+      "icon": "🍞"
+    },
+    "monument": {
+      "id": "monument",
+      "name": "Monument",
+      "description": "A grand stone monument that inspires settlers to stay and attracts newcomers",
+      "baseCost": {
+        "wood": 10,
+        "stone": 30,
+        "food": 10
+      },
+      "pricing": {
+        "scalingFactor": 1.50,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "populationCapacity": 5
+      },
+      "buildTime": 5,
+      "maxLevel": 2,
+      "icon": "🗿"
+    },
+    "storehouse": {
+      "id": "storehouse",
+      "name": "Storehouse",
+      "description": "A large well-organized building that stores all manner of goods",
+      "baseCost": {
+        "wood": 20,
+        "stone": 15
+      },
+      "pricing": {
+        "scalingFactor": 1.20,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "foodStorage": 15,
+        "woodStorage": 15,
+        "stoneStorage": 10
+      },
+      "buildTime": 3,
+      "maxLevel": 3,
+      "icon": "🏛️"
     }
   }
 }

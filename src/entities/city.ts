@@ -275,11 +275,13 @@ export class CitySystem {
       // Apply terrain bonuses based on building type
       switch (buildingType) {
         case 'lumber_yard':
+        case 'sawmill':
           if (tile.type.id === 'forest') {
             bonusMultiplier += 0.10; // +10% per forest tile
           }
           break;
         case 'quarry':
+        case 'stoneworks':
           if (tile.type.id === 'hill' || tile.type.id === 'mountain') {
             bonusMultiplier += 0.20; // +20% per hill/mountain tile
           }
