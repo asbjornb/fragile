@@ -282,6 +282,7 @@ export class Game {
 
     if (this.isMobile()) {
       this.leftSidebar.style.width = '100%';
+      this.leftSidebar.style.bottom = '0';
       this.leftSidebar.style.display = 'none';
     }
 
@@ -369,21 +370,27 @@ export class Game {
       });
     });
 
+    const mobile = this.isMobile();
+    const workerBtnSize = mobile ? '40px' : '22px';
+    const workerBtnFont = mobile ? '18px' : '12px';
+    const workerBtnGap = mobile ? '10px' : '6px';
+    const workerBtnMinWidth = mobile ? '90px' : '50px';
+
     const buildingsList = Array.from(buildingCounts.entries()).map(([buildingTypeId, data]) => {
       if (data.maxWorkers > 0) {
         // Building type that can have workers - stack layout
-        return `<div style="font-size: 13px; margin: 4px 0; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+        return `<div style="font-size: 13px; margin: 4px 0; padding: ${mobile ? '10px' : '8px'}; background: rgba(255,255,255,0.1); border-radius: 4px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
             <span style="font-weight: 500;">${data.buildingType?.icon || '🏗️'} ${data.buildingType?.name || buildingTypeId}</span>
             <span style="color: #bdc3c7; font-size: 12px;">(${data.count})</span>
           </div>
           <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-size: 12px; color: #95a5a6;">Workers: ${data.totalWorkers}/${data.maxWorkers}</span>
-            <div style="display: flex; align-items: center; gap: 6px; min-width: 50px; justify-content: flex-end;">
+            <span style="font-size: ${mobile ? '14px' : '12px'}; color: #95a5a6;">Workers: ${data.totalWorkers}/${data.maxWorkers}</span>
+            <div style="display: flex; align-items: center; gap: ${workerBtnGap}; min-width: ${workerBtnMinWidth}; justify-content: flex-end;">
               <button class="worker-btn" data-action="unassign" data-building-type="${buildingTypeId}"
-                      style="width: 22px; height: 22px; font-size: 12px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer; ${data.totalWorkers > 0 ? '' : 'visibility: hidden;'}">-</button>
+                      style="width: ${workerBtnSize}; height: ${workerBtnSize}; font-size: ${workerBtnFont}; background: #e74c3c; color: white; border: none; border-radius: ${mobile ? '6px' : '3px'}; cursor: pointer; ${data.totalWorkers > 0 ? '' : 'visibility: hidden;'}">-</button>
               <button class="worker-btn" data-action="assign" data-building-type="${buildingTypeId}"
-                      style="width: 22px; height: 22px; font-size: 12px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer; ${(data.totalWorkers < data.maxWorkers && city.availableWorkers > 0) ? '' : 'visibility: hidden;'}">+</button>
+                      style="width: ${workerBtnSize}; height: ${workerBtnSize}; font-size: ${workerBtnFont}; background: #27ae60; color: white; border: none; border-radius: ${mobile ? '6px' : '3px'}; cursor: pointer; ${(data.totalWorkers < data.maxWorkers && city.availableWorkers > 0) ? '' : 'visibility: hidden;'}">+</button>
             </div>
           </div>
         </div>`;
@@ -460,7 +467,7 @@ export class Game {
           <h3 style="margin: 0; font-size: 16px;">🏘️ Buildings</h3>
           <button id="unassign-all" style="padding: 6px 12px; font-size: 12px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer;">Unassign All</button>
         </div>
-        <div data-scroll-id="buildings-list" style="max-height: calc(100vh - 600px); overflow-y: auto;">
+        <div data-scroll-id="buildings-list" style="max-height: ${mobile ? 'none' : 'calc(100vh - 600px)'}; overflow-y: auto;">
           ${buildingsList || '<div style="font-size: 14px; color: #7f8c8d; text-align: center; padding: 30px;">No buildings yet</div>'}
         </div>
       </div>

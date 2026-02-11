@@ -9,7 +9,7 @@
 - ✅ **Game Systems**: Story/events system, tech tree with research mechanics (effects applied), terrain-based production bonuses
 - ✅ **Content Expansion**: 3 new buildings (granary, warehouse, hunter's lodge), 2 new techs (hunting, preservation), food consumption mechanic, tech-based building unlocks, tech effects applied to production/costs
 - ✅ **Resource Gating & Balance**: 5 new tech-gated buildings (stoneworks, sawmill, bakery, monument, storehouse), deeper progression chains via research prerequisites, increased building cost scaling
-- ✅ **Mobile Support**: Responsive layout with toggleable sidebar overlays, touch-optimized targets, viewport zoom prevention, compact wrapping building/research grid in bottom bar
+- ✅ **Mobile Support**: Responsive layout with toggleable sidebar overlays, touch-optimized targets (40px worker buttons), viewport zoom prevention, compact wrapping building/research grid in bottom bar, full-height sidebar with unrestricted building list scroll
 - ✅ **Save/Load System**: Auto-save with localStorage, title screen with New Game / Continue, versioned save format
 
 - ✅ **Seasons & Time**: Season system (120 ticks/year), winter food production penalty (-50%), harsh winter random event (-75%)
