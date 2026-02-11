@@ -283,6 +283,7 @@ export class Game {
     if (this.isMobile()) {
       this.leftSidebar.style.width = '100%';
       this.leftSidebar.style.bottom = '0';
+      this.leftSidebar.style.padding = '10px';
       this.leftSidebar.style.display = 'none';
     }
 
@@ -420,38 +421,58 @@ export class Game {
     const integrityColor = city.integrity > 70 ? '#2ecc71' : city.integrity > 30 ? '#f39c12' : '#e74c3c';
 
     this.leftSidebar.innerHTML = `
-      <h2 style="margin: 0 0 15px 0; font-size: 20px; border-bottom: 2px solid #34495e; padding-bottom: 10px;">${city.name}</h2>
+      <h2 style="margin: 0 0 ${mobile ? '8px' : '15px'} 0; font-size: ${mobile ? '16px' : '20px'}; border-bottom: 2px solid #34495e; padding-bottom: ${mobile ? '6px' : '10px'};">${city.name}</h2>
 
-      <div style="margin-bottom: 12px; padding: 8px 10px; background: ${season === 'winter' ? (harshWinter ? '#4a1a1a' : '#1a2a4a') : '#34495e'}; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 14px;">${seasonIcons[season]} ${seasonNames[season]}${harshWinter ? ' (Harsh!)' : ''}</span>
+      <div style="margin-bottom: ${mobile ? '8px' : '12px'}; padding: ${mobile ? '6px 8px' : '8px 10px'}; background: ${season === 'winter' ? (harshWinter ? '#4a1a1a' : '#1a2a4a') : '#34495e'}; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: ${mobile ? '13px' : '14px'};">${seasonIcons[season]} ${seasonNames[season]}${harshWinter ? ' (Harsh!)' : ''}</span>
         <span style="font-size: 12px; color: #95a5a6;">Year ${year}</span>
       </div>
 
-      <div style="margin-bottom: 20px; padding: 10px; background: #34495e; border-radius: 6px;">
+      <div style="margin-bottom: ${mobile ? '8px' : '20px'}; padding: ${mobile ? '8px' : '10px'}; background: #34495e; border-radius: 6px;">
+        ${mobile ? `
+        <h3 style="margin: 0; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.collapse-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';">
+          📊 City Status <span style="font-size: 11px; color: #95a5a6; margin-left: 8px;">Pop ${city.population} · Workers ${city.availableWorkers}</span>
+          <span class="collapse-icon" style="font-size: 12px;">▶</span>
+        </h3>
+        <div style="display: none; margin-top: 8px;">
+        ` : `
         <h3 style="margin: 0 0 10px 0; font-size: 16px;">📊 City Status</h3>
-        <div style="font-size: 14px;">
-          <div style="margin: 4px 0;">Population: <span style="color: #f39c12; font-weight: bold;">${city.population}/${city.maxPopulation}</span></div>
-          <div style="margin: 4px 0;">Available Workers: <span style="color: #2ecc71; font-weight: bold;">${city.availableWorkers}</span></div>
-          <div style="margin: 4px 0;">Integrity: <span style="color: ${integrityColor}; font-weight: bold;">${city.integrity}/${city.maxIntegrity}</span></div>
-          <div style="margin: 4px 0;">Unrest: <span style="color: ${unrestColor}; font-weight: bold;">${city.unrest}/${city.maxUnrest}</span>${city.unrest > 70 ? ' <span style="color: #e74c3c; font-size: 11px;">(Danger!)</span>' : ''}</div>
-          ${city.defenseRating > 0 ? `<div style="margin: 4px 0;">Defense: <span style="color: #3498db; font-weight: bold;">${city.defenseRating}</span></div>` : ''}
+        <div>
+        `}
+          <div style="font-size: ${mobile ? '13px' : '14px'};">
+            <div style="margin: 4px 0;">Population: <span style="color: #f39c12; font-weight: bold;">${city.population}/${city.maxPopulation}</span></div>
+            <div style="margin: 4px 0;">Available Workers: <span style="color: #2ecc71; font-weight: bold;">${city.availableWorkers}</span></div>
+            <div style="margin: 4px 0;">Integrity: <span style="color: ${integrityColor}; font-weight: bold;">${city.integrity}/${city.maxIntegrity}</span></div>
+            <div style="margin: 4px 0;">Unrest: <span style="color: ${unrestColor}; font-weight: bold;">${city.unrest}/${city.maxUnrest}</span>${city.unrest > 70 ? ' <span style="color: #e74c3c; font-size: 11px;">(Danger!)</span>' : ''}</div>
+            ${city.defenseRating > 0 ? `<div style="margin: 4px 0;">Defense: <span style="color: #3498db; font-weight: bold;">${city.defenseRating}</span></div>` : ''}
+          </div>
         </div>
       </div>
 
-      <div style="margin-bottom: 20px; padding: 10px; background: #34495e; border-radius: 6px;">
+      <div style="margin-bottom: ${mobile ? '8px' : '20px'}; padding: ${mobile ? '8px' : '10px'}; background: #34495e; border-radius: 6px;">
+        ${mobile ? `
+        <h3 style="margin: 0; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.collapse-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';">
+          💰 Resources <span style="font-size: 11px; color: #95a5a6; margin-left: 8px;">🍖${city.resources.food} 🪵${city.resources.wood} 🪨${city.resources.stone}</span>
+          <span class="collapse-icon" style="font-size: 12px;">▶</span>
+        </h3>
+        <div style="display: none; margin-top: 8px;">
+        ` : `
         <h3 style="margin: 0 0 10px 0; font-size: 16px;">💰 Resources</h3>
-        <div style="font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-          <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span> <span style="color: #e74c3c; font-size: 11px;">(-${this.citySystem.getFoodConsumption()}/tick)</span>${bonuses.food > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.food}%)</span>` : ''}${season === 'winter' ? ` <span style="color: #3498db; font-size: 11px;">(${harshWinter ? '-75%' : '-50%'} winter)</span>` : ''}</div>
-          <div>Wood: <span style="color: #8b4513; font-weight: bold;">${city.resources.wood}/${city.storage.wood}</span>${bonuses.wood > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.wood}%)</span>` : ''}</div>
-          <div>Stone: <span style="color: #95a5a6; font-weight: bold;">${city.resources.stone}/${city.storage.stone}</span>${bonuses.stone > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.stone}%)</span>` : ''}</div>
-          ${this.citySystem.hasResearchBuilding() ? `<div>Research: <span style="color: #9b59b6; font-weight: bold;">${city.resources.research}</span></div>` : ''}
+        <div>
+        `}
+          <div style="font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div>Food: <span style="color: #2ecc71; font-weight: bold;">${city.resources.food}/${city.storage.food}</span> <span style="color: #e74c3c; font-size: 11px;">(-${this.citySystem.getFoodConsumption()}/tick)</span>${bonuses.food > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.food}%)</span>` : ''}${season === 'winter' ? ` <span style="color: #3498db; font-size: 11px;">(${harshWinter ? '-75%' : '-50%'} winter)</span>` : ''}</div>
+            <div>Wood: <span style="color: #8b4513; font-weight: bold;">${city.resources.wood}/${city.storage.wood}</span>${bonuses.wood > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.wood}%)</span>` : ''}</div>
+            <div>Stone: <span style="color: #95a5a6; font-weight: bold;">${city.resources.stone}/${city.storage.stone}</span>${bonuses.stone > 0 ? ` <span style="color: #f39c12; font-size: 11px;">(+${bonuses.stone}%)</span>` : ''}</div>
+            ${this.citySystem.hasResearchBuilding() ? `<div>Research: <span style="color: #9b59b6; font-weight: bold;">${city.resources.research}</span></div>` : ''}
+          </div>
         </div>
       </div>
 
       ${this.citySystem.hasResearchBuilding() ? `
-        <div style="margin-bottom: 20px;">
-          <div style="padding: 10px; background: #34495e; border-radius: 6px;">
-            <h3 style="margin: 0 0 10px 0; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('span').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';">
+        <div style="margin-bottom: ${mobile ? '8px' : '20px'};">
+          <div style="padding: ${mobile ? '8px' : '10px'}; background: #34495e; border-radius: 6px;">
+            <h3 style="margin: 0; font-size: ${mobile ? '14px' : '16px'}; cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('span').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';">
               🔬 Research Technologies
               <span style="font-size: 12px;">▼</span>
             </h3>
