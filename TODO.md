@@ -12,20 +12,24 @@
 - ✅ **Mobile Support**: Responsive layout with toggleable sidebar overlays, touch-optimized targets, viewport zoom prevention, compact wrapping building/research grid in bottom bar
 - ✅ **Save/Load System**: Auto-save with localStorage, title screen with New Game / Continue, versioned save format
 
+- ✅ **Seasons & Time**: Season system (120 ticks/year), winter food production penalty (-50%), harsh winter random event (-75%)
+- ✅ **Unrest & Integrity**: Unrest mechanics (starvation, overcrowding), integrity tracking, monument unrest reduction
+- ✅ **Dynamic Events**: Bandit raids (defense-dependent), harsh winters, civil unrest (moderate/severe), starvation warnings
+- ✅ **Defense System**: Guard post (available from start) and watchtower (Defenses tech) buildings, defense rating calculation
+- ✅ **Collapse Mechanics**: Game over when population or integrity hits 0, collapse screen with stats
+- ✅ **Legacy/Prestige System**: Relic shards earned from milestones, legacy bonuses (production, starting food, cost reduction), cross-run persistence
+- ✅ **Save Migration**: v1→v2 save format migration with backwards compatibility
+
 ## In Progress / Pending
 
-### High Priority
-- ✅ Implement save/load system with localStorage
-- ⏳ Update spec with decisions made
-
 ### Medium Priority
-- ⏳ Add dynamic events (bandit raids, harsh winters)
-- ⏳ Implement unrest and collapse mechanics
-- ⏳ Create legacy/prestige system
+- ⏳ Implement ruins generation from past runs
+- ⏳ Add legacy panel accessible mid-game (pause gameplay)
+- ⏳ Update spec with all decisions made
 
 ### Low Priority
-- ⏳ Implement guard posts and watchtowers
 - ⏳ Implement proper resource node rendering system
+- ⏳ Add hidden achievements
 - ⏳ Add small powershell script to append all docs and copy to clipboard
 
 ---

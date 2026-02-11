@@ -68,8 +68,8 @@
 | Bakery | Tech "Crop Rotation" | +2 food / tick. | 12 wood, 10 stone | 1.25x exponential |
 | Monument | Tech "Masonry" | +5 pop capacity. | 10 wood, 30 stone, 10 food | 1.50x exponential |
 | Storehouse | Tech "Construction" | +15 food, +15 wood, +10 stone storage. | 20 wood, 15 stone | 1.20x exponential |
-| Watchtower | Tech "Defenses" | Extends city LOS; improves defense. | TBD | TBD |
-| Guard Post | None | Provides defense vs bandits/unrest (not a unit). | TBD | TBD |
+| Watchtower | Tech "Defenses" | +15 defense rating per level. | 15 wood, 20 stone, 5 food | 1.30x exponential |
+| Guard Post | None | +10 defense rating per level. | 12 wood, 8 stone | 1.25x exponential |
 
 **Building Mechanics:**
 - **Scaling Costs:** Each building type uses exponential cost scaling with unique factors

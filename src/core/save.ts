@@ -4,7 +4,7 @@ import { ResearchProgress } from '../systems/tech';
 import { StoryMessage } from '../systems/events';
 
 const SAVE_KEY = 'fragile_save';
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 
 export interface SaveData {
   version: number;
@@ -19,6 +19,10 @@ export interface SaveData {
   exploredHexes: string[];
   storyMessages: StoryMessage[];
   currentTab: 'buildings' | 'research';
+  eventState?: {
+    lastBanditRaidTick: number;
+  };
+  harshWinter?: boolean;
 }
 
 export class SaveSystem {
@@ -38,7 +42,18 @@ export class SaveSystem {
 
       const data = JSON.parse(json) as SaveData;
 
-      if (data.version !== SAVE_VERSION) {
+      // Accept both v1 and v2 saves, migrating v1 as needed
+      if (data.version === 1) {
+        data.version = SAVE_VERSION;
+        // Add defaults for new fields
+        if (data.city) {
+          if (data.city.tickCount === undefined) data.city.tickCount = 0;
+          if (data.city.defenseRating === undefined) data.city.defenseRating = 0;
+          if (data.city.wintersSurvived === undefined) data.city.wintersSurvived = 0;
+        }
+        if (!data.eventState) data.eventState = { lastBanditRaidTick: 0 };
+        if (data.harshWinter === undefined) data.harshWinter = false;
+      } else if (data.version !== SAVE_VERSION) {
         console.warn(`Save version mismatch: expected ${SAVE_VERSION}, got ${data.version}`);
         return null;
       }

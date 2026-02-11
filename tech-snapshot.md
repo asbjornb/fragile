@@ -1,7 +1,7 @@
 # Fragile - Technical Snapshot
 
-*Version: Pre-Alpha - Basic Exploration*  
-*Date: 2025-06-16*
+*Version: Alpha - Full Mechanics*
+*Date: 2026-02-11*
 
 ## Current Features
 
@@ -11,11 +11,17 @@
 - **Fog-of-war system** with visibility and exploration tracking
 - **Resource management** with food consumption (20 starting food, -1 per move)
 - **City founding mechanics** with transition from exploration to city management
-- **Building system** with 14 building types (hut, farm, shed, lumber_yard, quarry, library, granary, warehouse, hunters_lodge, stoneworks, sawmill, bakery, monument, storehouse)
-- **Progressive building unlocks** - storage buildings unlock when respective resource is maxed, library at population 10, tech-gated buildings (hunter's lodge via Hunting, stoneworks/monument via Masonry, sawmill via Advanced Tools, bakery via Crop Rotation, storehouse via Construction)
+- **Building system** with 16 building types (hut, farm, shed, lumber_yard, quarry, library, granary, warehouse, hunters_lodge, stoneworks, sawmill, bakery, monument, storehouse, guard_post, watchtower)
+- **Progressive building unlocks** - storage buildings unlock when respective resource is maxed, library at population 10, guard_post from start, tech-gated buildings (hunter's lodge via Hunting, stoneworks/monument via Masonry, sawmill via Advanced Tools, bakery via Crop Rotation, storehouse via Construction, watchtower via Defenses)
 - **Terrain-based production bonuses** - buildings gain efficiency from terrain within radius (includes city center)
+- **Seasons system** - 120 ticks/year, 4 seasons (Spring/Summer/Autumn/Winter), Winter reduces food production by 50%, harsh winter random event reduces by 75%
+- **Unrest & integrity mechanics** - Starvation and overcrowding increase unrest, monuments reduce unrest, >70% unrest triggers civil unrest events, integrity tracks city structural health
+- **Dynamic events** - Bandit raids (defense-dependent damage), harsh winters, civil unrest (moderate/severe), starvation warnings
+- **Defense system** - Guard posts and watchtowers provide defense rating, raids compare against defense to determine outcome
+- **Collapse mechanics** - Game over when population or integrity hits 0, shows collapse screen with stats and legacy rewards
+- **Legacy/prestige system** - Relic shards earned from techs, winters survived, milestones; cross-run bonuses (production, starting food, building costs)
 - **Interactive terrain legend** - shows terrain types and production bonuses during exploration phase
-- **Clean UI organization** - exploration shows food counter, city mode hides top bar and uses organized left sidebar
+- **Clean UI organization** - exploration shows food counter, city mode shows season/year bar, integrity/unrest/defense stats, organized left sidebar
 - **Worker assignment** and resource production systems
 - **Scaling costs** with exponential pricing for building upgrades
 - **Smooth movement animations** (300ms with easing)
@@ -111,9 +117,9 @@
 ```
 
 **Tech Configuration** (`src/data/techs.json`)
-- 9 technologies across 3 branches: Tools, Agriculture, Construction
+- 10 technologies across 4 branches: Tools, Agriculture, Construction, Defenses
 - Tech effects: workerEfficiency, foodProduction, stoneProduction, buildingCostReduction, foodConsumptionReduction
-- Tech-based building unlocks (Hunting→Hunter's Lodge, Masonry→Stoneworks/Monument, Advanced Tools→Sawmill, Crop Rotation→Bakery, Construction→Storehouse)
+- Tech-based building unlocks (Hunting→Hunter's Lodge, Masonry→Stoneworks/Monument, Advanced Tools→Sawmill, Crop Rotation→Bakery, Construction→Storehouse, Defenses→Watchtower)
 
 **Procedural Generation**
 - Deterministic seeded random using coordinate hashing
@@ -149,7 +155,10 @@ src/
 ├── systems/        # Game systems
 │   ├── input.ts    # Mouse input handling
 │   ├── visibility.ts # Fog-of-war system
-│   └── worldgen.ts # Procedural world generation
+│   ├── worldgen.ts # Procedural world generation
+│   ├── events.ts   # Story messages + dynamic event system
+│   ├── tech.ts     # Technology research system
+│   └── prestige.ts # Legacy/prestige cross-run system
 ├── data/           # Configuration
 │   ├── tiles.json  # Tile and resource definitions
 │   └── buildings.json # Building configurations
@@ -198,15 +207,16 @@ npm run test     # Run Playwright tests
 
 ## Known Limitations
 
-1. **No dynamic events** - No bandit raids, harsh winters, or unrest mechanics
-2. **Memory growth** - Generated tiles never cleaned up
-3. **Ore/fish unused** - Defined in tiles but not yet consumed by any building or mechanic
+1. **Memory growth** - Generated tiles never cleaned up
+2. **Ore/fish unused** - Defined in tiles but not yet consumed by any building or mechanic
+3. **No ruins generation** - Past run ruins not yet placed on new maps
+4. **No mid-game legacy panel** - Legacy data only shown on collapse
 
 ## Next Planned Features
-1. Implement unrest and collapse mechanics
-2. Add dynamic events (bandit raids, harsh winters)
-3. Create legacy/prestige system
-4. Add more content (buildings using ore, defense buildings)
+1. Implement ruins generation from past civilizations
+2. Add mid-game legacy panel access
+3. Add hidden achievements
+4. Add more content (buildings using ore, fish mechanics)
 
 ---
 

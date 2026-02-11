@@ -283,6 +283,45 @@
       "buildTime": 3,
       "maxLevel": 3,
       "icon": "🏛️"
+    },
+    "guard_post": {
+      "id": "guard_post",
+      "name": "Guard Post",
+      "description": "Stationed guards defend against bandit raids and civil unrest",
+      "baseCost": {
+        "wood": 12,
+        "stone": 8
+      },
+      "pricing": {
+        "scalingFactor": 1.25,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "defenseRating": 10
+      },
+      "buildTime": 2,
+      "maxLevel": 3,
+      "icon": "🛡️"
+    },
+    "watchtower": {
+      "id": "watchtower",
+      "name": "Watchtower",
+      "description": "Elevated vantage point improves early warning and city defense",
+      "baseCost": {
+        "wood": 15,
+        "stone": 20,
+        "food": 5
+      },
+      "pricing": {
+        "scalingFactor": 1.30,
+        "scalingType": "exponential"
+      },
+      "effects": {
+        "defenseRating": 15
+      },
+      "buildTime": 4,
+      "maxLevel": 2,
+      "icon": "🗼"
     }
   }
 }
