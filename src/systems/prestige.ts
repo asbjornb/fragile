@@ -1,9 +1,17 @@
 import { City } from '../entities/city';
+import { HexCoordinate } from '../core/hex';
 
 const LEGACY_KEY = 'fragile_legacy';
 
+export interface LegacyRuin {
+  position: HexCoordinate;
+  cityName: string;
+  relicShards: number;
+}
+
 export interface LegacyRun {
   cityName: string;
+  cityPosition?: HexCoordinate;
   population: number;
   ticksSurvived: number;
   wintersSurvived: number;
@@ -17,6 +25,7 @@ export interface LegacyRun {
 export interface LegacyData {
   totalRelicShards: number;
   runs: LegacyRun[];
+  ruins: LegacyRuin[];
   bonuses: {
     productionBonus: number;   // % bonus to all production
     startingFood: number;      // extra starting food
@@ -35,7 +44,22 @@ export class PrestigeSystem {
     try {
       const json = localStorage.getItem(LEGACY_KEY);
       if (json) {
-        return JSON.parse(json);
+        const data = JSON.parse(json) as LegacyData;
+        // Migrate: add ruins array if missing (old saves)
+        if (!data.ruins) {
+          data.ruins = [];
+          // Backfill ruins from runs that have cityPosition
+          for (const run of data.runs) {
+            if (run.cityPosition) {
+              data.ruins.push({
+                position: run.cityPosition,
+                cityName: run.cityName,
+                relicShards: run.relicShardsEarned
+              });
+            }
+          }
+        }
+        return data;
       }
     } catch (e) {
       console.error('Failed to load legacy data:', e);
@@ -43,6 +67,7 @@ export class PrestigeSystem {
     return {
       totalRelicShards: 0,
       runs: [],
+      ruins: [],
       bonuses: {
         productionBonus: 0,
         startingFood: 0,
@@ -91,6 +116,7 @@ export class PrestigeSystem {
 
     const run: LegacyRun = {
       cityName: city.name,
+      cityPosition: { q: city.position.q, r: city.position.r },
       population: city.population,
       ticksSurvived: city.tickCount,
       wintersSurvived: city.wintersSurvived,
@@ -103,6 +129,13 @@ export class PrestigeSystem {
 
     this.legacyData.runs.push(run);
     this.legacyData.totalRelicShards += shards;
+
+    // Create a ruin at the collapsed city's location
+    this.legacyData.ruins.push({
+      position: { q: city.position.q, r: city.position.r },
+      cityName: city.name,
+      relicShards: shards
+    });
 
     // Recalculate bonuses based on total shards (capped at 20% per spec)
     this.recalculateBonuses();
@@ -140,10 +173,15 @@ export class PrestigeSystem {
     return this.legacyData.runs.length;
   }
 
+  getRuins(): LegacyRuin[] {
+    return [...this.legacyData.ruins];
+  }
+
   resetLegacy(): void {
     this.legacyData = {
       totalRelicShards: 0,
       runs: [],
+      ruins: [],
       bonuses: {
         productionBonus: 0,
         startingFood: 0,

@@ -7,7 +7,7 @@
 
 ### Core Gameplay
 - **Settler exploration** with click-to-move mechanics
-- **Procedural world generation** with 6 tile types, 5 resource types, and adaptive terrain clustering
+- **Procedural world generation** with 7 tile types (including ruins), 5 resource types, and adaptive terrain clustering
 - **Fog-of-war system** with visibility and exploration tracking
 - **Resource management** with food consumption (20 starting food, -1 per move)
 - **City founding mechanics** with transition from exploration to city management
@@ -19,7 +19,8 @@
 - **Dynamic events** - Bandit raids (defense-dependent damage), harsh winters, civil unrest (moderate/severe), starvation warnings
 - **Defense system** - Guard posts and watchtowers provide defense rating, raids compare against defense to determine outcome
 - **Collapse mechanics** - Game over when population or integrity hits 0, shows collapse screen with stats and legacy rewards
-- **Legacy/prestige system** - Relic shards earned from techs, winters survived, milestones; cross-run bonuses (production, starting food, building costs)
+- **Legacy/prestige system** - Relic shards earned from techs, winters survived, milestones; cross-run bonuses (production, starting food, building costs); collapsed cities become ruins tiles on future maps
+- **Ruins generation** - Past cities persist as ruins tiles with unique visuals (crumbled walls, golden glow), discoverable during exploration for +3 food bonus and story messages
 - **Interactive terrain legend** - shows terrain types and production bonuses during exploration phase
 - **Clean UI organization** - exploration shows food counter, city mode shows season/year bar, integrity/unrest/defense stats, organized left sidebar
 - **Worker assignment** and resource production systems
@@ -98,7 +99,8 @@
 {
   "plains": { "color": "#9ACD32", "resources": ["wild_game"], "weight": 40 },
   "forest": { "color": "#228B22", "resources": ["wood"], "weight": 25 },
-  // ... etc
+  "ruins": { "color": "#8B7355", "resources": ["stone"], "weight": 0 },
+  // ... etc (7 tile types)
 }
 ```
 
@@ -209,14 +211,12 @@ npm run test     # Run Playwright tests
 
 1. **Memory growth** - Generated tiles never cleaned up
 2. **Ore/fish unused** - Defined in tiles but not yet consumed by any building or mechanic
-3. **No ruins generation** - Past run ruins not yet placed on new maps
-4. **No mid-game legacy panel** - Legacy data only shown on collapse
+3. **No mid-game legacy panel** - Legacy data only shown on collapse
 
 ## Next Planned Features
-1. Implement ruins generation from past civilizations
-2. Add mid-game legacy panel access
-3. Add hidden achievements
-4. Add more content (buildings using ore, fish mechanics)
+1. Add mid-game legacy panel access
+2. Add hidden achievements
+3. Add more content (buildings using ore, fish mechanics)
 
 ---
 

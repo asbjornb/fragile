@@ -38,6 +38,15 @@ export class Game {
     this.techSystem = new TechSystem();
     this.eventSystem = new EventSystem();
     this.prestigeSystem = new PrestigeSystem();
+
+    // Load ruins from past runs into the world generator
+    const ruins = this.prestigeSystem.getRuins();
+    if (ruins.length > 0) {
+      this.renderer.getWorldGenerator().setRuinLocations(
+        ruins.map(r => ({ position: r.position, cityName: r.cityName }))
+      );
+    }
+
     this.inputSystem = new InputSystem(
       this.renderer.getCanvas(),
       () => this.renderer.getCameraOffset()
@@ -143,6 +152,7 @@ export class Game {
           // Animate the movement
           this.renderer.animateSettlerMovement(fromHex, hex, this.settlerSystem.getSettler(), () => {
             this.updateVisibility();
+            this.checkRuinsDiscovery(hex);
             this.saveGame();
           });
         }
@@ -157,6 +167,20 @@ export class Game {
   private updateVisibility() {
     const settler = this.settlerSystem.getSettler();
     this.renderer.updateVisibility(settler.position, 2);
+  }
+
+  private checkRuinsDiscovery(hex: HexCoordinate) {
+    const tile = this.renderer.getWorldGenerator().getTile(hex);
+    if (tile && tile.type.id === 'ruins' && tile.ruinName) {
+      // Give the settler a food bonus for discovering ruins
+      this.settlerSystem.addFood(3);
+      this.storySystem.addMessage(
+        'ruins_discovered',
+        `You discover the crumbling remains of ${tile.ruinName}. Among the rubble, you find preserved supplies. (+3 food)`
+      );
+      // Re-render to update food display
+      this.render();
+    }
   }
 
   private setupUI(container: HTMLElement) {
@@ -1428,7 +1452,8 @@ export class Game {
       'event_civil_unrest': 'Civil Unrest',
       'event_civil_unrest_severe': 'Riots!',
       'event_starvation': 'Famine',
-      'collapse': 'Collapse'
+      'collapse': 'Collapse',
+      'ruins_discovered': 'Ruins Discovered'
     };
 
     return titles[messageId] || 'Settlement News';

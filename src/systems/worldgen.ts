@@ -15,22 +15,37 @@ export interface ResourceType {
   color: string;
 }
 
+export interface RuinLocation {
+  position: HexCoordinate;
+  cityName: string;
+}
+
 export interface Tile {
   coordinate: HexCoordinate;
   type: TileType;
   hasResource: boolean;
   resourceType?: ResourceType;
+  ruinName?: string; // Name of the past city if this is a ruins tile
 }
 
 export class WorldGenerator {
   private tileTypes: Map<string, TileType> = new Map();
   private resourceTypes: Map<string, ResourceType> = new Map();
   private generatedTiles: Map<string, Tile> = new Map();
+  private ruinLocations: Map<string, RuinLocation> = new Map();
   private seed: number;
 
   constructor(seed: number = Date.now()) {
     this.seed = seed;
     this.loadTileData();
+  }
+
+  setRuinLocations(ruins: RuinLocation[]): void {
+    this.ruinLocations.clear();
+    for (const ruin of ruins) {
+      const key = `${ruin.position.q},${ruin.position.r}`;
+      this.ruinLocations.set(key, ruin);
+    }
   }
 
   private loadTileData() {
@@ -173,26 +188,42 @@ export class WorldGenerator {
 
   generateTile(hex: HexCoordinate): Tile {
     const key = `${hex.q},${hex.r}`;
-    
+
     if (this.generatedTiles.has(key)) {
       return this.generatedTiles.get(key)!;
     }
-    
+
+    // Check if this hex is a ruins location from a past run
+    const ruin = this.ruinLocations.get(key);
+    if (ruin) {
+      const ruinsType = this.tileTypes.get('ruins')!;
+      const stoneResource = this.resourceTypes.get('stone');
+      const tile: Tile = {
+        coordinate: hex,
+        type: ruinsType,
+        hasResource: true,
+        resourceType: stoneResource,
+        ruinName: ruin.cityName
+      };
+      this.generatedTiles.set(key, tile);
+      return tile;
+    }
+
     const tileType = this.selectTileType(hex);
     const { hasResource, resourceType } = this.hasResource(hex, tileType);
-    
+
     // Debug: Log tile generation for a small area around origin
     if (Math.abs(hex.q) <= 3 && Math.abs(hex.r) <= 3) {
       console.log(`Generated ${tileType.name} at (${hex.q}, ${hex.r})`);
     }
-    
+
     const tile: Tile = {
       coordinate: hex,
       type: tileType,
       hasResource,
       resourceType
     };
-    
+
     this.generatedTiles.set(key, tile);
     return tile;
   }

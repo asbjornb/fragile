@@ -19,11 +19,11 @@
 - ✅ **Collapse Mechanics**: Game over when population or integrity hits 0, collapse screen with stats
 - ✅ **Legacy/Prestige System**: Relic shards earned from milestones, legacy bonuses (production, starting food, cost reduction), cross-run persistence
 - ✅ **Save Migration**: v1→v2 save format migration with backwards compatibility
+- ✅ **Ruins from Past Runs**: Collapsed cities become ruins tiles on future maps with unique visuals, +3 food bonus on discovery, story messages, backwards-compatible legacy data migration
 
 ## In Progress / Pending
 
 ### Medium Priority
-- ⏳ Implement ruins generation from past runs
 - ⏳ Add legacy panel accessible mid-game (pause gameplay)
 - ⏳ Update spec with all decisions made
 

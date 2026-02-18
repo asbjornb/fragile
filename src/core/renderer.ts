@@ -100,7 +100,8 @@ export class HexRenderer {
       { name: 'Hills', color: 0xDAA520, bonus: '+20% stone', y: 135 },
       { name: 'Mountain', color: 0x708090, bonus: '+20% stone', y: 160 },
       { name: 'River', color: 0x00BFFF, bonus: 'water source', y: 185 },
-      { name: 'Lake', color: 0x1E90FF, bonus: 'water source', y: 210 }
+      { name: 'Lake', color: 0x1E90FF, bonus: 'water source', y: 210 },
+      { name: 'Ruins', color: 0x8B7355, bonus: 'past civ', y: 235 }
     ];
 
     terrainInfo.forEach(terrain => {
@@ -496,6 +497,34 @@ export class HexRenderer {
           graphics.moveTo(startX, startY);
           graphics.lineTo(endX, endY);
         }
+        break;
+
+      case 'ruins':
+        // Crumbled walls and stone fragments
+        const stoneColor = this.lightenColor(baseColor, 0.3);
+        const darkStone = this.darkenColor(baseColor, 0.3);
+        graphics.lineStyle(0);
+
+        // Broken wall segments
+        graphics.beginFill(stoneColor);
+        graphics.drawRect(x - size * 0.5, y - size * 0.1, size * 0.3, size * 0.15);
+        graphics.drawRect(x + size * 0.15, y - size * 0.3, size * 0.15, size * 0.35);
+        graphics.drawRect(x - size * 0.2, y + size * 0.1, size * 0.45, size * 0.12);
+        graphics.endFill();
+
+        // Scattered rubble dots
+        graphics.beginFill(darkStone);
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI * 2 * i) / 6 + 0.5;
+          const radius = size * (0.2 + Math.sin(i * 2.1) * 0.15);
+          graphics.drawCircle(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius, 2);
+        }
+        graphics.endFill();
+
+        // Faint golden glow in center (relic energy)
+        graphics.beginFill(0xFFD700, 0.15);
+        graphics.drawCircle(x, y, size * 0.25);
+        graphics.endFill();
         break;
     }
   }
