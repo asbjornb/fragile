@@ -284,6 +284,7 @@ export class Game {
       this.leftSidebar.style.width = '100%';
       this.leftSidebar.style.bottom = '0';
       this.leftSidebar.style.padding = '10px';
+      this.leftSidebar.style.paddingBottom = '45vh'; // Space for fixed management bar
       this.leftSidebar.style.display = 'none';
     }
 
