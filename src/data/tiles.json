@@ -37,10 +37,17 @@
     },
     "lake": {
       "id": "lake",
-      "name": "Lake", 
+      "name": "Lake",
       "color": "#1E90FF",
       "resources": ["fish"],
       "weight": 2
+    },
+    "ruins": {
+      "id": "ruins",
+      "name": "Ruins",
+      "color": "#8B7355",
+      "resources": ["stone"],
+      "weight": 0
     }
   },
   
